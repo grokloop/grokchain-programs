@@ -1,5 +1,9 @@
 //! Shared grant-gated intent mouth: one check_grant, optional sponsor, vault debit.
-//! Agent never fee-pays and never is the SOL source. Never invoke_signed with vault seeds.
+//! Agent never fee-pays and never is the SOL source.
+//! Never invoke_signed with vault seeds. The pump adapter (`pump.rs`)
+//! invoke_signeds only trader seeds for the hardcoded pump.fun program
+//! (buy_v2 / sell_v2 / create_v2), never for an arbitrary program or
+//! arbitrary remaining-account blob.
 
 use anchor_lang::prelude::*;
 
@@ -87,6 +91,21 @@ pub fn debit_spend_vault<'info>(
     Ok(())
 }
 
+/// Trader is a 0-byte system-owned PDA. Must exist (rent-exempt) and stay system-owned.
+pub fn require_pump_trader_ready(trader: &AccountInfo) -> Result<()> {
+    require!(
+        *trader.owner == anchor_lang::solana_program::system_program::ID,
+        IntentsError::PumpTraderNotSystemOwned
+    );
+    require!(trader.data_is_empty(), IntentsError::PumpTraderNotSystemOwned);
+    let min = Rent::get()?.minimum_balance(crate::PUMP_TRADER_SPACE);
+    require!(
+        trader.lamports() >= min,
+        IntentsError::PumpTraderNotInitialized
+    );
+    Ok(())
+}
+
 /// remaining_accounts must not include our program-owned vaults.
 pub fn reject_protected_remaining<'info>(
     remaining: &[AccountInfo<'info>],
@@ -107,3 +126,18 @@ pub fn reject_protected_remaining<'info>(
     }
     Ok(())
 }
+
+/// remaining_accounts must not include the paymaster. Pump `user` is the
+/// system-owned pump-trader PDA (remaining[13]), not SpendVault.
+pub fn reject_paymaster_in_remaining<'info>(
+    remaining: &[AccountInfo<'info>],
+    paymaster: Option<&Pubkey>,
+) -> Result<()> {
+    if let Some(pm) = paymaster {
+        for acc in remaining {
+            require!(acc.key() != *pm, IntentsError::ProtectedAccountInRemaining);
+        }
+    }
+    Ok(())
+}
+

@@ -1,4 +1,5 @@
-# grok_chain_intents — program id is live on Solana DEVNET only. Not mainnet.
+# grok_chain_intents — MAINNET-PREP overlay. New program id. NOT the live DEVNET id.
+# provider.cluster is Localnet on purpose: a stray `anchor deploy` must not talk to mainnet.
 [toolchain]
 anchor_version = "0.30.1"
 
@@ -7,10 +8,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-grok_chain_intents = "EYhYtqLViS4H3FNt1Q8nGRHGt9oD87uaNsV2WJMNiRkz"
+grok_chain_intents = "3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw"
 
-[programs.devnet]
-grok_chain_intents = "EYhYtqLViS4H3FNt1Q8nGRHGt9oD87uaNsV2WJMNiRkz"
+[programs.mainnet]
+grok_chain_intents = "3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw"
 
 [registry]
 url = "https://api.apr.dev"

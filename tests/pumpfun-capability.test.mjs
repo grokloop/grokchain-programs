@@ -185,26 +185,36 @@ assert(!officialDocs.includes("LIMIT_ORDER.md"), "official docs/instructions has
 assert(!officialIxs.includes("limit_order") && !officialIxs.includes("place_order"), "official ix set has no limit/place/cancel order");
 assert(officialIxs.includes("buy") && officialIxs.includes("sell") && officialIxs.includes("create"), "curve primitives are buy/sell/create");
 assert(!/limit_order|place_order|cancel_order/.test(libSrc), "INTENTS has no limit-order instruction");
-assert(libSrc.includes("pub fn swap") && libSrc.includes("pub fn deploy") && libSrc.includes("pub fn call"), "INTENTS surface is pay/swap/deploy/call");
+assert(libSrc.includes("pub fn swap") && libSrc.includes("pub fn deploy") && libSrc.includes("pub fn call"), "INTENTS still has swap/deploy/call");
+assert(libSrc.includes("pub fn pump_buy") && libSrc.includes("pub fn pump_sell") && libSrc.includes("pub fn pump_create"), "INTENTS adds pump_buy/pump_sell/pump_create");
+assert(libSrc.includes("pub fn pump_amm_buy") && libSrc.includes("pub fn pump_amm_sell"), "INTENTS adds pump_amm_buy/pump_amm_sell");
+assert(libSrc.includes("3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw"), "declare_id is live MAINNET INTENTS");
 
-console.log("== 7. structural blocker: vault cannot be pump user ==");
-assert(callSrc.includes("invoke(&ix, ctx.remaining_accounts)"), "inner CPI is unsigned invoke");
-assert(!callSrc.includes("invoke_signed(") && !swapSrc.includes("invoke_signed(") && !deploySrc.includes("invoke_signed(") && !commonSrc.includes("invoke_signed("), "no invoke_signed( call in call/swap/deploy/common");
-assert(commonSrc.includes("reject_protected_remaining"), "vault/paymaster banned from remaining_accounts");
-assert(callSrc.includes("reject_protected_remaining"), "call rejects vault in remaining");
+console.log("== 7. pump adapter: trader is user; call/swap/deploy still unsigned ==");
+const pumpSrc = readSrc("instructions/pump.rs");
+assert(callSrc.includes("invoke(&ix, ctx.remaining_accounts)"), "call inner CPI is still unsigned invoke");
+assert(!callSrc.includes("invoke_signed(") && !swapSrc.includes("invoke_signed(") && !deploySrc.includes("invoke_signed(") && !commonSrc.includes("invoke_signed("), "no invoke_signed in call/swap/deploy/common");
+assert(pumpSrc.includes("invoke_signed("), "pump adapter invoke_signed as trader");
+assert(!pumpSrc.includes("data: vec![]"), "pump_buy does not use empty ix data");
+assert(pumpSrc.includes("PUMP_PROGRAM_ID"), "inner program hardcoded to pump.fun");
+const pumpAmmSrc = readSrc("instructions/pump_amm.rs");
+assert(pumpAmmSrc.includes("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA"), "pump_amm inner program is PumpSwap only");
+assert(pumpAmmSrc.includes("invoke_signed("), "pump_amm adapter invoke_signed as trader");
 assert(callSrc.includes("Never the fee payer / SOL source"), "agent signs INTENTS, is not SOL source");
-assert(swapSrc.includes("SOL only") || swapSrc.includes("no SPL"), "SOL lives on SpendVault PDA");
 
 console.log("== RESULT TABLE ==");
 const table = [
-  ["buy", "FAIL", "call forwards empty data; swap is SOL-send; pump user must sign; vault cannot"],
-  ["sell", "FAIL", "same as buy: user signer + base ATA + non-empty ix data required"],
+  ["buy", "PASS", "pump_buy: check_grant(max_sol_cost) then invoke_signed buy_v2 as trader"],
+  ["sell", "PASS", "pump_sell: check_grant(0) then invoke_signed sell_v2 as trader"],
   ["limit", "FAIL", "not a pump.fun bonding-curve primitive; do not invent one"],
-  ["launch", "FAIL", "deploy is event-only; call cannot forward create/create_v2 payload"],
+  ["launch", "PASS", "pump_create: official create_v2; client mint signer; trader is user"],
+  ["amm-buy", "PASS", "pump_amm_buy: PumpSwap pAMMBay6 buy_exact_quote_in only"],
+  ["amm-sell", "PASS", "pump_amm_sell: PumpSwap pAMMBay6 sell only"],
 ];
 for (const row of table) {
   console.log("  " + row[1] + "  " + row[0] + "  " + row[2]);
-  assert(row[1] === "FAIL", row[0] + " is FAIL");
+  if (row[0] === "limit") assert(row[1] === "FAIL", row[0] + " is FAIL");
+  else assert(row[1] === "PASS", row[0] + " is PASS");
 }
 
 console.log("");

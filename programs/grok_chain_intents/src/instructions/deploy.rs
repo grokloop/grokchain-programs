@@ -12,6 +12,8 @@ use crate::state::{DeployArgs, Paymaster, SpendVault};
 
 /// Grant-gated deploy *request*. Does not invoke bpf_loader. Does not upload ELF.
 /// Does not pretend a program was deployed. Default: check_grant(0) + event.
+/// Not a pump.fun coin launch. Coin launch is `pump_create`. This ix stays
+/// check_grant(0) + event only.
 pub fn handler(ctx: Context<Deploy>, args: DeployArgs) -> Result<()> {
     common::precheck_sponsor(
         args.sponsor_lamports,

@@ -1,9 +1,9 @@
 //! Grok Chain intents + paymaster program (v1).
 //! Implements SPEC.md. Sits on Solana L1. Not a VM, sequencer, or coin.
 //!
-//! `declare_id!` is the pubkey of target/deploy/grok_chain_intents-keypair.json.
-//! DEVNET. Deployed to Solana devnet. Not mainnet. Not a product claim.
-//! This source implements swap/deploy/call. It was not upgraded on devnet in this change.
+//! `declare_id!` is the pubkey of the MAINNET-PREP keypair (not the live DEVNET id).
+//! MAINNET overlay: pay + grant-gated swap/deploy/call + tight pump adapter.
+//! declare_id stays 3HCErAF. CORE CPI target is 44fxwzu. Not a DEX / L1 / compiler.
 
 use anchor_lang::prelude::*;
 
@@ -21,7 +21,7 @@ pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("EYhYtqLViS4H3FNt1Q8nGRHGt9oD87uaNsV2WJMNiRkz");
+declare_id!("3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw");
 
 #[program]
 pub mod grok_chain_intents {
@@ -78,6 +78,34 @@ pub mod grok_chain_intents {
     pub fn call(ctx: Context<Call>, args: CallArgs) -> Result<()> {
         instructions::call::handler(ctx, args)
     }
+
+    pub fn init_pump_trader(ctx: Context<InitPumpTrader>) -> Result<()> {
+        instructions::pump_trader::init(ctx)
+    }
+
+    pub fn fund_pump_trader(ctx: Context<FundPumpTrader>, lamports: u64) -> Result<()> {
+        instructions::pump_trader::fund(ctx, lamports)
+    }
+
+    pub fn pump_buy(ctx: Context<PumpTrade>, args: PumpBuyArgs) -> Result<()> {
+        instructions::pump::buy_handler(ctx, args)
+    }
+
+    pub fn pump_sell(ctx: Context<PumpTrade>, args: PumpSellArgs) -> Result<()> {
+        instructions::pump::sell_handler(ctx, args)
+    }
+
+    pub fn pump_create(ctx: Context<PumpTrade>, args: PumpCreateArgs) -> Result<()> {
+        instructions::pump::create_handler(ctx, args)
+    }
+
+    pub fn pump_amm_buy(ctx: Context<PumpAmmTrade>, args: PumpAmmBuyArgs) -> Result<()> {
+        instructions::pump_amm::buy_handler(ctx, args)
+    }
+
+    pub fn pump_amm_sell(ctx: Context<PumpAmmTrade>, args: PumpAmmSellArgs) -> Result<()> {
+        instructions::pump_amm::sell_handler(ctx, args)
+    }
 }
 
 pub fn spend_vault_pda(program_id: &Pubkey, grok_account: &Pubkey) -> (Pubkey, u8) {
@@ -86,6 +114,10 @@ pub fn spend_vault_pda(program_id: &Pubkey, grok_account: &Pubkey) -> (Pubkey, u
 
 pub fn paymaster_pda(program_id: &Pubkey, grok_account: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[SEED_PAYMASTER, grok_account.as_ref()], program_id)
+}
+
+pub fn pump_trader_pda(program_id: &Pubkey, grok_account: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[SEED_PUMP_TRADER, grok_account.as_ref()], program_id)
 }
 
 #[cfg(test)]
@@ -113,6 +145,8 @@ mod spec_lock {
     fn seeds_match_spec() {
         assert_eq!(SEED_SPEND_VAULT, b"spend-vault");
         assert_eq!(SEED_PAYMASTER, b"paymaster");
+        assert_eq!(SEED_PUMP_TRADER, b"pump-trader");
+        assert_eq!(PUMP_TRADER_SPACE, 0);
         assert_eq!(
             SEED_SPEND_VAULT,
             &[115, 112, 101, 110, 100, 45, 118, 97, 117, 108, 116]
@@ -121,6 +155,10 @@ mod spec_lock {
             SEED_PAYMASTER,
             &[112, 97, 121, 109, 97, 115, 116, 101, 114]
         );
+        assert_eq!(
+            SEED_PUMP_TRADER,
+            &[112, 117, 109, 112, 45, 116, 114, 97, 100, 101, 114]
+        );
         assert_eq!(MAX_SPONSOR_LAMPORTS, 10_000_000);
         // CORE seeds we path-depend on — do not re-derive incorrectly.
         assert_eq!(grok_chain_core::SEED_GROK_ACCOUNT, b"grok-account");
@@ -128,7 +166,7 @@ mod spec_lock {
     }
 
     #[test]
-    fn error_discriminants_0_to_18() {
+    fn error_discriminants_0_to_42() {
         assert_eq!(IntentsError::UnauthorizedRoot as u32, 0);
         assert_eq!(IntentsError::AgentMismatch as u32, 1);
         assert_eq!(IntentsError::ZeroPayAmount as u32, 2);
@@ -148,6 +186,31 @@ mod spec_lock {
         assert_eq!(IntentsError::CallTargetMismatch as u32, 16);
         assert_eq!(IntentsError::TargetNotExecutable as u32, 17);
         assert_eq!(IntentsError::ProtectedAccountInRemaining as u32, 18);
+        assert_eq!(IntentsError::PumpProgramMismatch as u32, 19);
+        assert_eq!(IntentsError::PumpAccountCountMismatch as u32, 20);
+        assert_eq!(IntentsError::PumpUserMustBeVault as u32, 21);
+        assert_eq!(IntentsError::AgentCannotFeePay as u32, 22);
+        assert_eq!(IntentsError::PumpEmptyDataForbidden as u32, 23);
+        assert_eq!(IntentsError::PumpAtaCreateRequiresFeePayer as u32, 24);
+        assert_eq!(IntentsError::InvalidTokenProgram as u32, 25);
+        assert_eq!(IntentsError::PumpPdaMismatch as u32, 26);
+        assert_eq!(IntentsError::PumpUserMustBeVault as u32, 21);
+        assert_eq!(IntentsError::PumpUserMustBeTrader as u32, 27);
+        assert_eq!(IntentsError::PumpTraderNotSystemOwned as u32, 28);
+        assert_eq!(IntentsError::PumpTraderAlreadyExists as u32, 29);
+        assert_eq!(IntentsError::PumpTraderNotInitialized as u32, 30);
+        assert_eq!(IntentsError::PumpMintMustBeSigner as u32, 31);
+        assert_eq!(IntentsError::PumpCreateNameTooLong as u32, 32);
+        assert_eq!(IntentsError::PumpCreateSymbolTooLong as u32, 33);
+        assert_eq!(IntentsError::PumpCreateUriTooLong as u32, 34);
+        assert_eq!(IntentsError::PumpAmmProgramMismatch as u32, 35);
+        assert_eq!(IntentsError::PumpAmmAccountCountMismatch as u32, 36);
+        assert_eq!(IntentsError::PumpAmmPoolInvalid as u32, 37);
+        assert_eq!(IntentsError::PumpAmmQuoteMustBeWsol as u32, 38);
+        assert_eq!(IntentsError::PumpAmmFeeRecipientInvalid as u32, 39);
+        assert_eq!(IntentsError::PumpTraderUnderfunded as u32, 40);
+        assert_eq!(IntentsError::PumpAmmSellCheckGrantAmountMustBeZero as u32, 41);
+        assert_eq!(IntentsError::PumpAmmSellAccountCountMismatch as u32, 42);
     }
 
     #[test]
@@ -158,6 +221,8 @@ mod spec_lock {
         assert_ne!(IntentsError::CallTargetMismatch as u32, 11);
         assert_ne!(IntentsError::TargetNotExecutable as u32, 11);
         assert_ne!(IntentsError::ProtectedAccountInRemaining as u32, 11);
+        assert_ne!(IntentsError::PumpProgramMismatch as u32, 11);
+        assert_ne!(IntentsError::AgentCannotFeePay as u32, 11);
     }
 
     #[test]
@@ -183,6 +248,20 @@ mod spec_lock {
         assert_eq!(disc("event", "Swapped"), [217, 52, 52, 83, 147, 135, 96, 109]);
         assert_eq!(disc("event", "DeployRequested"), [236, 93, 153, 180, 211, 112, 67, 252]);
         assert_eq!(disc("event", "Called"), [30, 97, 254, 149, 60, 38, 255, 5]);
+        assert_eq!(disc("global", "pump_buy"), [82, 225, 119, 231, 78, 29, 45, 70]);
+        assert_eq!(disc("global", "pump_sell"), [93, 88, 60, 34, 91, 18, 86, 197]);
+        assert_eq!(disc("event", "PumpBought"), [209, 183, 238, 75, 181, 1, 117, 110]);
+        assert_eq!(disc("event", "PumpSold"), [17, 201, 39, 152, 27, 110, 49, 106]);
+        assert_eq!(disc("global", "init_pump_trader"), [92, 98, 75, 2, 93, 219, 250, 5]);
+        assert_eq!(disc("global", "fund_pump_trader"), [63, 189, 216, 54, 81, 101, 241, 97]);
+        assert_eq!(disc("event", "PumpTraderInitialized"), [197, 80, 95, 239, 242, 153, 144, 179]);
+        assert_eq!(disc("event", "PumpTraderFunded"), [60, 253, 86, 159, 109, 54, 46, 170]);
+        assert_eq!(disc("global", "pump_create"), [24, 176, 142, 141, 243, 152, 56, 128]);
+        assert_eq!(disc("event", "PumpCreated"), [126, 79, 125, 229, 148, 39, 13, 70]);
+        assert_eq!(disc("global", "pump_amm_buy"), [129, 59, 179, 195, 110, 135, 61, 2]);
+        assert_eq!(disc("event", "PumpAmmBought"), [234, 79, 225, 112, 20, 215, 78, 43]);
+        assert_eq!(disc("global", "pump_amm_sell"), [238, 234, 142, 38, 107, 206, 76, 195]);
+        assert_eq!(disc("event", "PumpAmmSold"), [66, 145, 209, 9, 84, 220, 173, 113]);
     }
 
     #[test]
@@ -198,7 +277,7 @@ mod spec_lock {
         // CORE crate declare_id (deploy keypair). CPI program_id must be this.
         assert_eq!(
             grok_chain_core::ID.to_string(),
-            "7UtafKBBWNHEXC9PaNXu8USdZqL6VEWupsL7rS6LeVDj"
+            "44fxwzuEyNxZtgDr87mTtMYYJ1LJm6cB5aZNLyBsPjNd"
         );
         // Data size: 8-byte disc + Borsh u64.
         assert_eq!(CHECK_GRANT_DISCRIMINATOR.len() + 8, 16);
@@ -300,4 +379,42 @@ mod spec_lock {
         // call/deploy path: 0 is the check_grant amount
         assert_eq!(policy::DEPLOY_CHECK_GRANT_AMOUNT, 0);
     }
+
+    #[test]
+    fn pump_amm_buy_requires_prefund() {
+        // rent0 for 0-byte trader is 0 on-chain only at runtime; here just the math.
+        assert!(policy::require_pump_trader_prefunded(0, 100_000_000, 890_880).is_err());
+        assert!(policy::require_pump_trader_prefunded(100_000_000, 100_000_000, 890_880).is_err());
+        assert!(policy::require_pump_trader_prefunded(100_890_880, 100_000_000, 890_880).is_ok());
+    }
+
+    #[test]
+    fn pump_buy_requires_prefund() {
+        // Curve buy: max_sol_cost + 0-byte rent already on trader. Same math as AMM.
+        assert!(policy::require_pump_trader_prefunded(0, 100_000_000, 890_880).is_err());
+        assert!(policy::require_pump_trader_prefunded(100_000_000, 100_000_000, 890_880).is_err());
+        assert!(policy::require_pump_trader_prefunded(100_890_880, 100_000_000, 890_880).is_ok());
+        assert_eq!(IntentsError::PumpTraderUnderfunded as u32, 40);
+    }
+
+    #[test]
+    fn pump_amm_sell_check_grant_zero_and_amounts() {
+        assert_eq!(policy::PUMP_SELL_CHECK_GRANT_AMOUNT, 0);
+        assert_eq!(policy::PUMP_AMM_SELL_CHECK_GRANT_AMOUNT, 0);
+        assert!(policy::require_pump_amm_sell_check_grant_amount(0).is_ok());
+        assert!(policy::require_pump_amm_sell_check_grant_amount(1).is_err());
+        assert!(policy::require_pump_amm_sell_amounts(0, 1).is_err());
+        assert!(policy::require_pump_amm_sell_amounts(1, 0).is_ok());
+        assert!(policy::require_pump_amm_sell_amounts(1, 1).is_ok());
+        assert!(policy::require_pump_amm_sell_account_count(24).is_ok());
+        assert!(policy::require_pump_amm_sell_account_count(26).is_err());
+        assert!(policy::require_pump_amm_sell_account_count(27).is_err());
+        let data = encode_pump_amm_sell(1_000, 1);
+        assert_eq!(data.len(), 24);
+        assert_eq!(&data[..8], &PUMP_AMM_SELL_DISC);
+        assert!(policy::require_nonempty_pump_amm_sell_data(&data).is_ok());
+        let buy = encode_pump_amm_buy_exact_quote_in(1, 1, true);
+        assert!(policy::require_nonempty_pump_amm_sell_data(&buy).is_err());
+    }
+
 }

@@ -4,6 +4,9 @@ pub mod common;
 pub mod deploy;
 pub mod pay;
 pub mod paymaster;
+pub mod pump;
+pub mod pump_amm;
+pub mod pump_trader;
 pub mod spend_vault;
 pub mod swap;
 
@@ -11,6 +14,9 @@ pub use call::*;
 pub use deploy::*;
 pub use pay::*;
 pub use paymaster::*;
+pub use pump::*;
+pub use pump_amm::*;
+pub use pump_trader::*;
 pub use spend_vault::*;
 pub use swap::*;
 
