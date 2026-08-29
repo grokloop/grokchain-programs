@@ -121,6 +121,55 @@ pub mod grok_chain_intents {
     pub fn token_sell(ctx: Context<TokenTrade>, args: TokenSellArgs) -> Result<()> {
         instructions::token::token_sell_handler(ctx, args)
     }
+
+    // ---- payments: paying a real payee, not trading ----
+
+    /// Root: create the payee allowlist, pinned to one mint.
+    pub fn init_merchant_registry(
+        ctx: Context<InitMerchantRegistry>,
+        mint: Pubkey,
+    ) -> Result<()> {
+        instructions::merchants::init(ctx, mint)
+    }
+
+    /// Root: approve a payee.
+    pub fn add_merchant(ctx: Context<UpdateMerchantRegistry>, merchant: Pubkey) -> Result<()> {
+        instructions::merchants::add(ctx, merchant)
+    }
+
+    /// Root: revoke a payee. Immediate, and cancels every subscription to them.
+    pub fn remove_merchant(ctx: Context<UpdateMerchantRegistry>, merchant: Pubkey) -> Result<()> {
+        instructions::merchants::remove(ctx, merchant)
+    }
+
+    /// Agent: pay an approved merchant. Grant-gated, metered in raw token units.
+    pub fn pay_token(ctx: Context<PayToken>, args: PayTokenArgs) -> Result<()> {
+        instructions::pay_token::handler(ctx, args)
+    }
+
+    // ---- subscriptions ----
+
+    /// Root: start recurring billing to an already-approved merchant.
+    pub fn create_subscription(
+        ctx: Context<CreateSubscription>,
+        args: SubscriptionArgs,
+    ) -> Result<()> {
+        instructions::subscription::create(ctx, args)
+    }
+
+    /// Root: stop it. Immediate, and the merchant cannot refuse or delay.
+    pub fn cancel_subscription(ctx: Context<CancelSubscription>) -> Result<()> {
+        instructions::subscription::cancel(ctx)
+    }
+
+    /// Agent: settle one period. Idempotent — `last_paid_period` advances in the
+    /// same transaction that moves the money, so a retry cannot pay twice.
+    pub fn pay_subscription(
+        ctx: Context<PaySubscription>,
+        args: PaySubscriptionArgs,
+    ) -> Result<()> {
+        instructions::subscription::pay(ctx, args)
+    }
 }
 
 pub fn spend_vault_pda(program_id: &Pubkey, grok_account: &Pubkey) -> (Pubkey, u8) {
@@ -154,6 +203,45 @@ mod spec_lock {
     fn spaces_match_spec() {
         assert_eq!(SpendVault::SPACE, 73);
         assert_eq!(Paymaster::SPACE, 106);
+        // 8 disc + grok + root + mint + bump + vec len + 32 payees
+        assert_eq!(MerchantRegistry::SPACE, 8 + 32 + 32 + 32 + 1 + 4 + 32 * 32);
+        // 8 disc + 4 pubkeys + amount + period + start + last_paid + payments + active + bump
+        assert_eq!(Subscription::SPACE, 8 + 32 * 4 + 8 * 4 + 4 + 1 + 1);
+    }
+
+    /// The payment surface exists to do what trading intents cannot: move value
+    /// to somebody else, bounded by a list only the human can edit.
+    #[test]
+    fn payment_seeds_and_bounds() {
+        assert_eq!(SEED_MERCHANTS, b"merchants");
+        assert_eq!(SEED_SUBSCRIPTION, b"subscription");
+        assert_eq!(MAX_MERCHANTS, 32);
+        // A day is the floor. Anything faster is a drain vector wearing a
+        // subscription's clothes.
+        assert_eq!(instructions::subscription::MIN_PERIOD_SECONDS, 86_400);
+        // Never-paid must sit below period 0, or the first charge is skipped.
+        assert!(instructions::subscription::PERIOD_NONE < 0);
+    }
+
+    /// Periods are the whole idempotency story: a boundary that moves early or
+    /// late is a double charge or a missed one.
+    #[test]
+    fn subscription_periods_are_exact() {
+        use instructions::subscription::current_period;
+        let start = 1_700_000_000i64;
+        let day = 86_400i64;
+        assert_eq!(current_period(start, start, day).unwrap(), 0);
+        assert_eq!(current_period(start + day - 1, start, day).unwrap(), 0);
+        assert_eq!(current_period(start + day, start, day).unwrap(), 1);
+        assert!(current_period(start - 1, start, day).is_err());
+    }
+
+    /// min_out was silently ignored before; these are the bounds that replaced it.
+    #[test]
+    fn swap_outcome_is_bounded_by_balances() {
+        assert!(policy::enforce_swap_outcome(1_000, 500, 1_000, 500).is_ok());
+        assert!(policy::enforce_swap_outcome(1_001, 500, 1_000, 500).is_err());
+        assert!(policy::enforce_swap_outcome(1_000, 499, 1_000, 500).is_err());
     }
 
     #[test]

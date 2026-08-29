@@ -154,3 +154,73 @@ pub struct TokenSellArgs {
     pub wrap_sol: bool,
     pub jupiter_data: Vec<u8>,
 }
+
+/// Root-owned payee allowlist, one per GrokAccount, pinned to a single mint.
+///
+/// The mint is pinned because CORE meters one `u64` with no notion of asset:
+/// `pay_token` spends the grant cap in RAW TOKEN UNITS, which is only coherent
+/// while an agent spends one denomination. A second asset means a second agent.
+#[account]
+pub struct MerchantRegistry {
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub mint: Pubkey,
+    pub bump: u8,
+    pub merchants: Vec<Pubkey>,
+}
+
+impl MerchantRegistry {
+    pub const SPACE: usize = 8 + 32 + 32 + 32 + 1 + 4 + 32 * MAX_MERCHANTS;
+}
+
+/// `pay_token` args. Wire: u64 amount + u8 decimals + u64 sponsor.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct PayTokenArgs {
+    /// Raw token units. Metered against the grant cap.
+    pub amount: u64,
+    /// Must equal the mint's own decimals; TransferChecked compares them.
+    pub decimals: u8,
+    pub sponsor_lamports: u64,
+}
+
+/// A recurring payment. `last_paid_period` is the idempotency key: it advances
+/// inside the same transaction that moves the money, so a retry cannot pay
+/// twice. `-1` means never paid; periods are 0-indexed from `start_unix`.
+#[account]
+pub struct Subscription {
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub merchant: Pubkey,
+    pub mint: Pubkey,
+    pub amount: u64,
+    pub period_seconds: i64,
+    pub start_unix: i64,
+    pub last_paid_period: i64,
+    pub payments: u32,
+    pub active: bool,
+    pub bump: u8,
+}
+
+impl Subscription {
+    pub const SPACE: usize = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 4 + 1 + 1;
+}
+
+/// `create_subscription` args. Wire: Pubkey + u64 + i64 + i64.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct SubscriptionArgs {
+    pub merchant: Pubkey,
+    pub amount: u64,
+    pub period_seconds: i64,
+    /// 0 (or any past value) means "start now".
+    pub start_unix: i64,
+}
+
+/// `pay_subscription` args. Wire: i64 period + u64 sponsor.
+///
+/// The period is asserted by the caller rather than inferred, so a scheduler
+/// whose clock has drifted fails loudly instead of paying the wrong cycle.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct PaySubscriptionArgs {
+    pub period: i64,
+    pub sponsor_lamports: u64,
+}

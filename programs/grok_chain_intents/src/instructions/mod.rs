@@ -4,10 +4,13 @@ pub mod common;
 pub mod deploy;
 pub mod pay;
 pub mod paymaster;
+pub mod merchants;
+pub mod pay_token;
 pub mod pump;
 pub mod pump_amm;
 pub mod pump_trader;
 pub mod spend_vault;
+pub mod subscription;
 pub mod swap;
 pub mod token;
 
@@ -15,10 +18,13 @@ pub use call::*;
 pub use deploy::*;
 pub use pay::*;
 pub use paymaster::*;
+pub use merchants::*;
+pub use pay_token::*;
 pub use pump::*;
 pub use pump_amm::*;
 pub use pump_trader::*;
 pub use spend_vault::*;
+pub use subscription::*;
 pub use swap::*;
 pub use token::*;
 

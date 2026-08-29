@@ -260,3 +260,81 @@ pub struct TokenSold {
     pub grant: Pubkey,
     pub generation: u32,
 }
+
+#[event]
+pub struct TokenPaid {
+    pub trader: Pubkey,
+    pub mint: Pubkey,
+    pub destination: Pubkey,
+    pub payee: Pubkey,
+    pub amount: u64,
+    pub decimals: u8,
+    /// Solana Pay reconciliation key, when the payer attached one.
+    pub reference: Option<Pubkey>,
+    pub agent: Pubkey,
+    pub grant: Pubkey,
+    pub generation: u32,
+}
+
+#[event]
+pub struct MerchantRegistryInitialized {
+    pub merchant_registry: Pubkey,
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub mint: Pubkey,
+}
+
+#[event]
+pub struct MerchantAdded {
+    pub merchant_registry: Pubkey,
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub merchant: Pubkey,
+    pub count: u32,
+}
+
+#[event]
+pub struct MerchantRemoved {
+    pub merchant_registry: Pubkey,
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub merchant: Pubkey,
+    pub count: u32,
+}
+
+#[event]
+pub struct SubscriptionCreated {
+    pub subscription: Pubkey,
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub merchant: Pubkey,
+    pub mint: Pubkey,
+    pub amount: u64,
+    pub period_seconds: i64,
+    pub start_unix: i64,
+}
+
+#[event]
+pub struct SubscriptionCancelled {
+    pub subscription: Pubkey,
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub merchant: Pubkey,
+    pub payments: u32,
+    pub last_paid_period: i64,
+}
+
+#[event]
+pub struct SubscriptionPaid {
+    pub subscription: Pubkey,
+    pub grok_account: Pubkey,
+    pub merchant: Pubkey,
+    pub mint: Pubkey,
+    pub amount: u64,
+    pub period: i64,
+    pub payments: u32,
+    pub reference: Option<Pubkey>,
+    pub agent: Pubkey,
+    pub grant: Pubkey,
+    pub generation: u32,
+}
