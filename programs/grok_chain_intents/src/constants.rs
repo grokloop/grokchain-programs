@@ -11,6 +11,14 @@ pub const SEED_PAYMASTER: &[u8] = b"paymaster";
 /// PumpTrader PDA seed. Hex: `70 75 6d 70 2d 74 72 61 64 65 72`.
 /// 0-byte system-owned PDA. No #[account] data. pump.fun `user`.
 pub const SEED_PUMP_TRADER: &[u8] = b"pump-trader";
+/// Root-owned payee allowlist. A CORE grant caps an amount and names a program,
+/// never a recipient, so the merchant list has to live here.
+pub const SEED_MERCHANTS: &[u8] = b"merchants";
+/// Bounds the registry account size. 32 payees is plenty for one account and
+/// keeps the linear scan in pay_token cheap.
+pub const MAX_MERCHANTS: usize = 32;
+/// One subscription per (grok_account, merchant, mint).
+pub const SEED_SUBSCRIPTION: &[u8] = b"subscription";
 
 /// PumpTrader space. Always 0. Owner is the System Program, not INTENTS.
 pub const PUMP_TRADER_SPACE: usize = 0;

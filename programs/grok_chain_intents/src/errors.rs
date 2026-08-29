@@ -119,4 +119,34 @@ pub enum IntentsError {
     JupiterOverspent = 55,
     #[msg("Jupiter route returned less than min_out")]
     JupiterMinOutNotMet = 56,
+    #[msg("payment mint is not the one this merchant registry was created for")]
+    PayTokenMintNotRegistered = 57,
+    #[msg("source and destination token accounts must hold the same mint")]
+    PayTokenMintMismatch = 58,
+    #[msg("payment source must be a token account owned by the pump-trader")]
+    PayTokenSourceOwnerNotTrader = 59,
+    #[msg("payee is not on the root merchant allowlist")]
+    PayTokenPayeeNotAllowed = 60,
+    #[msg("declared decimals do not match the mint")]
+    PayTokenDecimalsMismatch = 61,
+    #[msg("pump-trader holds less than the payment amount")]
+    PayTokenInsufficient = 62,
+    #[msg("token account or mint data is malformed")]
+    PayTokenAccountInvalid = 63,
+    #[msg("merchant allowlist is full")]
+    MerchantRegistryFull = 64,
+    #[msg("merchant is already on the allowlist")]
+    MerchantAlreadyListed = 65,
+    #[msg("merchant is not on the allowlist")]
+    MerchantNotListed = 66,
+    #[msg("subscription is cancelled")]
+    SubscriptionInactive = 67,
+    #[msg("subscription billing period is shorter than the one-day minimum")]
+    SubscriptionPeriodTooShort = 68,
+    #[msg("subscription has not started yet")]
+    SubscriptionNotStarted = 69,
+    #[msg("stated period does not match the chain clock")]
+    SubscriptionPeriodMismatch = 70,
+    #[msg("this billing period has already been paid")]
+    SubscriptionAlreadyPaid = 71,
 }
