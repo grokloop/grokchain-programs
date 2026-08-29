@@ -235,6 +235,9 @@ pub struct TokenBought {
     pub output_mint: Pubkey,
     pub in_amount: u64,
     pub min_out: u64,
+    /// Measured from the trader's own balances, not taken from the route.
+    pub spent: u64,
+    pub received: u64,
     pub agent: Pubkey,
     pub grant: Pubkey,
     pub generation: u32,
@@ -250,6 +253,9 @@ pub struct TokenSold {
     pub output_mint: Pubkey,
     pub in_amount: u64,
     pub min_out: u64,
+    /// Measured from the trader's own balances, not taken from the route.
+    pub spent: u64,
+    pub received: u64,
     pub agent: Pubkey,
     pub grant: Pubkey,
     pub generation: u32,

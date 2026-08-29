@@ -452,8 +452,12 @@ mod spec_lock {
 
     #[test]
     fn token_buy_sell_policy_without_runtime() {
-        assert!(policy::require_token_amounts(0, 1).is_err());
-        assert!(policy::require_token_amounts(1, 0).is_ok());
+        assert!(policy::require_token_amounts(0).is_err());
+        assert!(policy::require_token_amounts(1).is_ok());
+        // min_out is held after the swap, not before it
+        assert!(policy::enforce_swap_outcome(1, 1, 1, 1).is_ok());
+        assert!(policy::enforce_swap_outcome(2, 1, 1, 1).is_err());
+        assert!(policy::enforce_swap_outcome(1, 0, 1, 1).is_err());
         let mut data = vec![9u8; 8];
         data.extend_from_slice(&42u64.to_le_bytes());
         assert!(policy::require_nonempty_jupiter_data(&data).is_ok());
