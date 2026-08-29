@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-/// SPEC.md §8. Discriminants 0..=18 are stable. Next free code after this file: 43.
+/// SPEC.md §8. Discriminants 0..=18 are stable. Next free code after this file: 49.
 /// 21 PumpUserMustBeVault is unused (vault is never pump user).
 #[error_code]
 pub enum IntentsError {
@@ -91,4 +91,16 @@ pub enum IntentsError {
     PumpAmmSellCheckGrantAmountMustBeZero = 41,
     #[msg("pump AMM sell remaining_accounts count must be 24")]
     PumpAmmSellAccountCountMismatch = 42,
+    #[msg("withdraw remaining_accounts must be even [from_ata, to_ata, ...] pairs")]
+    WithdrawRemainingAccountsOdd = 43,
+    #[msg("withdraw token account is not a valid Token or Token-2022 account")]
+    WithdrawTokenAccountInvalid = 44,
+    #[msg("withdraw from ATA owner is not the pump-trader")]
+    WithdrawTokenOwnerNotTrader = 45,
+    #[msg("withdraw from/to ATA mint mismatch")]
+    WithdrawTokenMintMismatch = 46,
+    #[msg("withdraw dest ATA owner is not root")]
+    WithdrawTokenDestOwnerNotRoot = 47,
+    #[msg("pump-trader SOL withdraw would drop below rent-exempt minimum")]
+    InsufficientPumpTrader = 48,
 }

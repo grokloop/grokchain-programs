@@ -214,3 +214,14 @@ pub struct PumpAmmSold {
     pub grant: Pubkey,
     pub generation: u32,
 }
+
+/// Root swept SOL (trader → root) and/or token ATAs (trader ATA → root ATA).
+/// Not grant-gated. Does not close the trader.
+#[event]
+pub struct PumpTraderWithdrawn {
+    pub pump_trader: Pubkey,
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub lamports: u64,
+}
+

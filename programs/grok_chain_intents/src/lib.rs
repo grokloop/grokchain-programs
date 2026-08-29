@@ -87,6 +87,13 @@ pub mod grok_chain_intents {
         instructions::pump_trader::fund(ctx, lamports)
     }
 
+    pub fn withdraw_pump_trader<'info>(
+        ctx: Context<'_, '_, '_, 'info, WithdrawPumpTrader<'info>>,
+        lamports: u64,
+    ) -> Result<()> {
+        instructions::pump_trader::withdraw(ctx, lamports)
+    }
+
     pub fn pump_buy(ctx: Context<PumpTrade>, args: PumpBuyArgs) -> Result<()> {
         instructions::pump::buy_handler(ctx, args)
     }
@@ -166,7 +173,7 @@ mod spec_lock {
     }
 
     #[test]
-    fn error_discriminants_0_to_42() {
+    fn error_discriminants_0_to_48() {
         assert_eq!(IntentsError::UnauthorizedRoot as u32, 0);
         assert_eq!(IntentsError::AgentMismatch as u32, 1);
         assert_eq!(IntentsError::ZeroPayAmount as u32, 2);
@@ -211,6 +218,12 @@ mod spec_lock {
         assert_eq!(IntentsError::PumpTraderUnderfunded as u32, 40);
         assert_eq!(IntentsError::PumpAmmSellCheckGrantAmountMustBeZero as u32, 41);
         assert_eq!(IntentsError::PumpAmmSellAccountCountMismatch as u32, 42);
+        assert_eq!(IntentsError::WithdrawRemainingAccountsOdd as u32, 43);
+        assert_eq!(IntentsError::WithdrawTokenAccountInvalid as u32, 44);
+        assert_eq!(IntentsError::WithdrawTokenOwnerNotTrader as u32, 45);
+        assert_eq!(IntentsError::WithdrawTokenMintMismatch as u32, 46);
+        assert_eq!(IntentsError::WithdrawTokenDestOwnerNotRoot as u32, 47);
+        assert_eq!(IntentsError::InsufficientPumpTrader as u32, 48);
     }
 
     #[test]
@@ -262,6 +275,8 @@ mod spec_lock {
         assert_eq!(disc("event", "PumpAmmBought"), [234, 79, 225, 112, 20, 215, 78, 43]);
         assert_eq!(disc("global", "pump_amm_sell"), [238, 234, 142, 38, 107, 206, 76, 195]);
         assert_eq!(disc("event", "PumpAmmSold"), [66, 145, 209, 9, 84, 220, 173, 113]);
+        assert_eq!(disc("global", "withdraw_pump_trader"), [188, 237, 135, 114, 143, 224, 45, 178]);
+        assert_eq!(disc("event", "PumpTraderWithdrawn"), [55, 235, 116, 220, 179, 244, 66, 235]);
     }
 
     #[test]

@@ -176,6 +176,7 @@ fn no_limit_order_primitive() {
     assert!(LIB_RS.contains("pub fn pump_amm_sell"));
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
+    assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
 }
 
 #[test]
@@ -283,6 +284,7 @@ fn capability_table_buy_sell_launch_via_adapter_limit_fail() {
     assert!(LIB_RS.contains("pub fn pump_create"));
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
+    assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
     assert!(!LIB_RS.contains("limit_order"));
     assert!(PUMP_RS.contains("create_handler"));
 }
@@ -413,4 +415,16 @@ fn pump_curve_buy_create_no_in_ix_vault_debit() {
     assert!(!sell.contains("require_pump_trader_prefunded"));
     assert!(create.contains("require_pump_trader_prefunded"));
     assert!(!create.contains("debit_spend_vault"));
+}
+
+#[test]
+fn withdraw_pump_trader_is_separate_ix() {
+    assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
+    assert!(PUMP_TRADER_RS.contains("pub fn withdraw"));
+    assert!(PUMP_TRADER_RS.contains("PumpTraderWithdrawn"));
+    assert!(PUMP_TRADER_RS.contains("system_instruction::transfer"));
+    assert!(!PUMP_TRADER_RS.contains("try_debit_program_owned"));
+    assert!(!PUMP_RS.contains("fn withdraw"));
+    assert_eq!(IntentsError::WithdrawRemainingAccountsOdd as u32, 43);
+    assert_eq!(IntentsError::InsufficientPumpTrader as u32, 48);
 }

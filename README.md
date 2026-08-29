@@ -52,7 +52,7 @@ The only CPI into CORE is `check_grant`. Thin invoke, documented metas, hardcode
 
 ## What is implemented
 
-Root-signed: `init_spend_vault`, `fund_spend_vault`, `withdraw_spend_vault`, `init_paymaster`, `fund_paymaster`, `withdraw_paymaster`, `set_relayer`, `pause_paymaster`, `unpause_paymaster`, `init_pump_trader`, `fund_pump_trader`.
+Root-signed: `init_spend_vault`, `fund_spend_vault`, `withdraw_spend_vault`, `init_paymaster`, `fund_paymaster`, `withdraw_paymaster`, `set_relayer`, `pause_paymaster`, `unpause_paymaster`, `init_pump_trader`, `fund_pump_trader`, `withdraw_pump_trader` (SOL + token ATA sweep to root; not grant-gated; does not close the trader).
 
 Agent-signed, all grant-gated (one `check_grant`, abort on CORE error, optional sponsor):
 
