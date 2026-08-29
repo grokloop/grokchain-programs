@@ -186,8 +186,9 @@ assert(!officialIxs.includes("limit_order") && !officialIxs.includes("place_orde
 assert(officialIxs.includes("buy") && officialIxs.includes("sell") && officialIxs.includes("create"), "curve primitives are buy/sell/create");
 assert(!/limit_order|place_order|cancel_order/.test(libSrc), "INTENTS has no limit-order instruction");
 assert(libSrc.includes("pub fn swap") && libSrc.includes("pub fn deploy") && libSrc.includes("pub fn call"), "INTENTS still has swap/deploy/call");
-assert(libSrc.includes("pub fn pump_buy") && libSrc.includes("pub fn pump_sell") && libSrc.includes("pub fn pump_create"), "INTENTS adds pump_buy/pump_sell/pump_create");
-assert(libSrc.includes("pub fn pump_amm_buy") && libSrc.includes("pub fn pump_amm_sell"), "INTENTS adds pump_amm_buy/pump_amm_sell");
+assert(!libSrc.includes("pub fn pump_buy") && !libSrc.includes("pub fn pump_sell") && !libSrc.includes("pub fn pump_create"), "INTENTS cut pump_buy/pump_sell/pump_create for size");
+assert(!libSrc.includes("pub fn pump_amm_buy") && !libSrc.includes("pub fn pump_amm_sell"), "INTENTS cut pump_amm_buy/pump_amm_sell for size");
+assert(libSrc.includes("pub fn init_pump_trader") && libSrc.includes("pub fn fund_pump_trader") && libSrc.includes("pub fn withdraw_pump_trader"), "INTENTS keeps pump trader vault ixs");
 assert(libSrc.includes("3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw"), "declare_id is live MAINNET INTENTS");
 
 console.log("== 7. pump adapter: trader is user; call/swap/deploy still unsigned ==");
@@ -204,17 +205,17 @@ assert(callSrc.includes("Never the fee payer / SOL source"), "agent signs INTENT
 
 console.log("== RESULT TABLE ==");
 const table = [
-  ["buy", "PASS", "pump_buy: check_grant(max_sol_cost) then invoke_signed buy_v2 as trader"],
-  ["sell", "PASS", "pump_sell: check_grant(0) then invoke_signed sell_v2 as trader"],
+  ["buy", "CUT", "pump_buy cut from live MAINNET binary for size; Jupiter token_buy stays"],
+  ["sell", "CUT", "pump_sell cut from live MAINNET binary for size; Jupiter token_sell stays"],
   ["limit", "FAIL", "not a pump.fun bonding-curve primitive; do not invent one"],
-  ["launch", "PASS", "pump_create: official create_v2; client mint signer; trader is user"],
-  ["amm-buy", "PASS", "pump_amm_buy: PumpSwap pAMMBay6 buy_exact_quote_in only"],
-  ["amm-sell", "PASS", "pump_amm_sell: PumpSwap pAMMBay6 sell only"],
+  ["launch", "CUT", "pump_create cut from live MAINNET binary for size"],
+  ["amm-buy", "CUT", "pump_amm_buy cut from live MAINNET binary for size"],
+  ["amm-sell", "CUT", "pump_amm_sell cut from live MAINNET binary for size"],
 ];
 for (const row of table) {
   console.log("  " + row[1] + "  " + row[0] + "  " + row[2]);
   if (row[0] === "limit") assert(row[1] === "FAIL", row[0] + " is FAIL");
-  else assert(row[1] === "PASS", row[0] + " is PASS");
+  else assert(row[1] === "CUT", row[0] + " is CUT");
 }
 
 console.log("");

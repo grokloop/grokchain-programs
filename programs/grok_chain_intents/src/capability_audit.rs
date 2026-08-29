@@ -170,11 +170,12 @@ fn no_limit_order_primitive() {
     assert!(!LIB_RS.contains("limit_order"));
     assert!(!LIB_RS.contains("place_order"));
     assert!(!LIB_RS.contains("cancel_order"));
-    assert!(LIB_RS.contains("pub fn pump_buy"));
-    assert!(LIB_RS.contains("pub fn pump_sell"));
-    assert!(LIB_RS.contains("pub fn pump_create"));
-    assert!(LIB_RS.contains("pub fn pump_amm_buy"));
-    assert!(LIB_RS.contains("pub fn pump_amm_sell"));
+    // MAINNET size cut: pump trade ixs removed. Trader vault ixs stay.
+    assert!(!LIB_RS.contains("pub fn pump_buy"));
+    assert!(!LIB_RS.contains("pub fn pump_sell"));
+    assert!(!LIB_RS.contains("pub fn pump_create"));
+    assert!(!LIB_RS.contains("pub fn pump_amm_buy"));
+    assert!(!LIB_RS.contains("pub fn pump_amm_sell"));
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
     assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
@@ -264,7 +265,7 @@ fn create_v2_disc_mint_must_be_signer() {
     assert!(PUMP_RS.contains("require_pump_mint_is_signer"));
     assert!(PUMP_RS.contains("PumpMintMustBeSigner"));
     assert!(PUMP_RS.contains("encode_pump_create_v2"));
-    assert!(LIB_RS.contains("pub fn pump_create"));
+    assert!(!LIB_RS.contains("pub fn pump_create"));
 }
 
 #[test]
@@ -280,17 +281,17 @@ fn create_user_must_be_trader_vault_as_user_fails() {
 
 #[test]
 fn capability_table_buy_sell_launch_via_adapter_limit_fail() {
-    let buy = "PASS";
-    let sell = "PASS";
+    let buy = "CUT";
+    let sell = "CUT";
     let limit = "FAIL";
-    let launch = "PASS";
-    assert_eq!(buy, "PASS");
-    assert_eq!(sell, "PASS");
+    let launch = "CUT";
+    assert_eq!(buy, "CUT");
+    assert_eq!(sell, "CUT");
     assert_eq!(limit, "FAIL");
-    assert_eq!(launch, "PASS");
-    assert!(LIB_RS.contains("pub fn pump_buy"));
-    assert!(LIB_RS.contains("pub fn pump_sell"));
-    assert!(LIB_RS.contains("pub fn pump_create"));
+    assert_eq!(launch, "CUT");
+    assert!(!LIB_RS.contains("pub fn pump_buy"));
+    assert!(!LIB_RS.contains("pub fn pump_sell"));
+    assert!(!LIB_RS.contains("pub fn pump_create"));
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
     assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
@@ -305,7 +306,7 @@ fn pump_amm_sell_official_sell_not_sell_v2() {
     assert_eq!(PUMP_AMM_SELL_DATA_LEN, 24);
     assert_eq!(PUMP_AMM_SELL_ACCOUNT_COUNT, 24);
     assert_eq!(PUMP_AMM_SELL_ACCOUNT_COUNT_CASHBACK, 26);
-    assert!(LIB_RS.contains("pub fn pump_amm_sell"));
+    assert!(!LIB_RS.contains("pub fn pump_amm_sell"));
     assert!(PUMP_AMM_RS.contains("pub fn sell_handler"));
     assert!(PUMP_AMM_RS.contains("encode_pump_amm_sell"));
     assert!(PUMP_AMM_RS.contains("PUMP_AMM_SELL_CHECK_GRANT_AMOUNT"));
@@ -326,7 +327,7 @@ fn pump_amm_sell_official_sell_not_sell_v2() {
 
 #[test]
 fn pump_amm_sell_no_in_ix_vault_debit_check_grant_zero() {
-    assert!(LIB_RS.contains("pub fn pump_amm_sell"));
+    assert!(!LIB_RS.contains("pub fn pump_amm_sell"));
     assert!(PUMP_AMM_RS.contains("encode_pump_amm_sell"));
     assert!(PUMP_AMM_RS.contains("No in-ix vault debit"));
     assert!(PUMP_AMM_RS.contains("remaining[1]") || PUMP_AMM_RS.contains("Trader is remaining[1] only"));

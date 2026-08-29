@@ -52,15 +52,14 @@ the mint rather than trusted from args.
 | All spending, keep selling | `revise_grant` cap = spent | Buys fail, sells still pass |
 | Everything | `revoke_grant` | Nothing works, including exits |
 
-## Status — READ BEFORE DEPLOYING
+## Status
 
-**NOT COMPILED.** No Rust toolchain was available where this was written. The
-crate is structurally complete and self-consistent — every referenced symbol
-resolves, error codes are contiguous `0..71`, braces balance, and all seven new
-discriminators match the client already on `grokchain-mcp` `main` — but it has
-never been through `cargo`. Expect first-build fixes.
+`pay_token`, merchant registry, and subscriptions are on the live MAINNET
+payments ELF (`3HCErAF`, upgrade slot 442622147). Pump trade ixs were cut
+from that binary for size. Do not claim a live 0.01 USDC shop payment (no
+USDC in the vault). Historical review notes below stay as notes.
 
-Before any mainnet upgrade of `3HCErAF`:
+Before a future upgrade of `3HCErAF`:
 
 1. `cargo test -p grok_chain_intents` — spec-lock tests cover the new spaces,
    seeds, period arithmetic and swap bounds.

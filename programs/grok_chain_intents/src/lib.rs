@@ -2,7 +2,7 @@
 //! Implements SPEC.md. Sits on Solana L1. Not a VM, sequencer, or coin.
 //!
 //! `declare_id!` is the pubkey of the MAINNET-PREP keypair (not the live DEVNET id).
-//! MAINNET overlay: pay + grant-gated swap/deploy/call + tight pump adapter.
+//! MAINNET overlay: pay + grant-gated swap/deploy/call + token. Pump trade ixs cut for size.
 //! declare_id stays 3HCErAF. CORE CPI target is 44fxwzu. Not a DEX / L1 / compiler.
 
 use anchor_lang::prelude::*;
@@ -92,26 +92,6 @@ pub mod grok_chain_intents {
         lamports: u64,
     ) -> Result<()> {
         instructions::pump_trader::withdraw(ctx, lamports)
-    }
-
-    pub fn pump_buy(ctx: Context<PumpTrade>, args: PumpBuyArgs) -> Result<()> {
-        instructions::pump::buy_handler(ctx, args)
-    }
-
-    pub fn pump_sell(ctx: Context<PumpTrade>, args: PumpSellArgs) -> Result<()> {
-        instructions::pump::sell_handler(ctx, args)
-    }
-
-    pub fn pump_create(ctx: Context<PumpTrade>, args: PumpCreateArgs) -> Result<()> {
-        instructions::pump::create_handler(ctx, args)
-    }
-
-    pub fn pump_amm_buy(ctx: Context<PumpAmmTrade>, args: PumpAmmBuyArgs) -> Result<()> {
-        instructions::pump_amm::buy_handler(ctx, args)
-    }
-
-    pub fn pump_amm_sell(ctx: Context<PumpAmmTrade>, args: PumpAmmSellArgs) -> Result<()> {
-        instructions::pump_amm::sell_handler(ctx, args)
     }
 
     pub fn token_buy(ctx: Context<TokenTrade>, args: TokenBuyArgs) -> Result<()> {
