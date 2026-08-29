@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use crate::constants::MAX_MERCHANTS;
+
 /// SPEC.md §5.2. Field order is the Borsh order. Space = 73.
 /// SOL custody is the lamports on this PDA (program-owned). No shadow balance.
 #[account]
