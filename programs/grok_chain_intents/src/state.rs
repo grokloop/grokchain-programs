@@ -121,3 +121,36 @@ pub struct PumpAmmSellArgs {
     pub min_quote_amount_out: u64,
     pub sponsor_lamports: u64,
 }
+
+/// `token_buy` args. Wire: disc + Borsh two u64s + sponsor + two pubkeys +
+/// wrap_sol + Jupiter swap-instructions data (never empty).
+/// Inner program is hardcoded Jupiter v6. `jupiter_data` is official
+/// swap-instruction bytes from Jupiter. Do not take a raw client program id.
+/// `in_amount` must match the amount encoded in `jupiter_data`.
+/// Paying with native SOL/WSOL: check_grant(in_amount). Paying with a token
+/// already on the trader (USDC or other): check_grant(0). wrap_sol wraps
+/// native SOL onto the trader WSOL ATA. Adapter does not create ATAs.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct TokenBuyArgs {
+    pub in_amount: u64,
+    pub min_out: u64,
+    pub sponsor_lamports: u64,
+    pub input_mint: Pubkey,
+    pub output_mint: Pubkey,
+    pub wrap_sol: bool,
+    pub jupiter_data: Vec<u8>,
+}
+
+/// `token_sell` args. Same wire as TokenBuyArgs.
+/// Selling tokens for quote: check_grant(0). Selling WSOL/SOL for USDC (or
+/// another quote): check_grant(in_amount). wrap_sol when the input is native SOL.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct TokenSellArgs {
+    pub in_amount: u64,
+    pub min_out: u64,
+    pub sponsor_lamports: u64,
+    pub input_mint: Pubkey,
+    pub output_mint: Pubkey,
+    pub wrap_sol: bool,
+    pub jupiter_data: Vec<u8>,
+}

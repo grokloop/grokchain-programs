@@ -254,3 +254,11 @@ pub fn encode_pump_amm_sell(base_amount_in: u64, min_quote_amount_out: u64) -> V
     data.extend_from_slice(&min_quote_amount_out.to_le_bytes());
     data
 }
+
+/// Official Jupiter v6 aggregator. The only inner program `token_buy` /
+/// `token_sell` will CPI into. Not a general router allowlist.
+pub const JUPITER_V6_PROGRAM_ID: Pubkey = pubkey!("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
+
+/// Official Circle USDC (mainnet). Quote mint MAY be this, WSOL, or another
+/// SPL / Token-2022 mint. Not an allowlist — documented so clients can name it.
+pub const USDC_MINT: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");

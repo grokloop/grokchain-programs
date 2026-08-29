@@ -1,4 +1,4 @@
-//! Pure policy checks shared by pay / swap / deploy / call / pump_buy / pump_sell / pump_create.
+//! Pure policy checks shared by pay / swap / deploy / call / pump_* / token_buy / token_sell.
 //! Unit-testable without a validator. Handlers still run these before CPI.
 
 use anchor_lang::prelude::*;
@@ -12,6 +12,7 @@ use crate::constants::{
     PUMP_CREATE_NAME_MAX, PUMP_CREATE_SYMBOL_MAX, PUMP_CREATE_URI_MAX,
     PUMP_CREATE_V2_ACCOUNT_COUNT, PUMP_CREATE_V2_ACCOUNT_COUNT_WITH_QUOTE, PUMP_CREATE_V2_DISC,
     PUMP_CREATE_V2_IX_DATA_MIN, PUMP_PROGRAM_ID, PUMP_TRADE_IX_DATA_LEN,
+    JUPITER_V6_PROGRAM_ID, WSOL_MINT,
 };
 use crate::errors::IntentsError;
 
@@ -285,6 +286,61 @@ pub fn require_pump_amm_breaking_fee_recipient(id: &Pubkey) -> Result<()> {
     Ok(())
 }
 
+
+/// `check_grant` amount for token_buy/token_sell when the input is NOT SOL/WSOL.
+/// Grant is a SOL-spent cap. USDC (or another token already on the trader)
+/// does not consume that cap. check_grant(0) still enforces allowlist / expiry.
+pub const TOKEN_NON_SOL_CHECK_GRANT_AMOUNT: u64 = 0;
+
+/// SOL/WSOL in → grant in_amount. Any other mint (USDC or other) → 0.
+/// wrap_sol implies native SOL spend even if the mint is WSOL.
+pub fn token_check_grant_amount(input_mint: &Pubkey, wrap_sol: bool, in_amount: u64) -> u64 {
+    if wrap_sol || *input_mint == WSOL_MINT {
+        in_amount
+    } else {
+        TOKEN_NON_SOL_CHECK_GRANT_AMOUNT
+    }
+}
+
+pub fn require_token_amounts(in_amount: u64, _min_out: u64) -> Result<()> {
+    require!(in_amount > 0, IntentsError::ZeroAmount);
+    Ok(())
+}
+
+pub fn require_token_mints_distinct(input_mint: &Pubkey, output_mint: &Pubkey) -> Result<()> {
+    require!(input_mint != output_mint, IntentsError::ZeroAmount);
+    Ok(())
+}
+
+pub fn require_wrap_mint(wrap_sol: bool, input_mint: &Pubkey) -> Result<()> {
+    if wrap_sol {
+        require_keys_eq!(*input_mint, WSOL_MINT, IntentsError::TokenWrapMintMustBeWsol);
+    }
+    Ok(())
+}
+
+pub fn require_jupiter_program(id: &Pubkey) -> Result<()> {
+    require_keys_eq!(*id, JUPITER_V6_PROGRAM_ID, IntentsError::JupiterProgramMismatch);
+    Ok(())
+}
+
+pub fn require_nonempty_jupiter_data(data: &[u8]) -> Result<()> {
+    require!(!data.is_empty(), IntentsError::JupiterEmptyDataForbidden);
+    require!(data.len() >= 8, IntentsError::JupiterEmptyDataForbidden);
+    Ok(())
+}
+
+/// Jupiter route_plan is variable-length, so in_amount is not at a fixed offset.
+/// Require the LE bytes of `in_amount` to appear after the 8-byte disc.
+pub fn require_jupiter_in_amount(data: &[u8], in_amount: u64) -> Result<()> {
+    require_nonempty_jupiter_data(data)?;
+    let needle = in_amount.to_le_bytes();
+    let hay = &data[8..];
+    let found = hay.windows(8).any(|w| w == needle);
+    require!(found, IntentsError::JupiterInAmountMismatch);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -442,7 +498,38 @@ mod tests {
         assert!(require_pump_amm_sell_check_grant_amount(1).is_err());
         assert!(require_pump_amm_sell_check_grant_amount(PUMP_AMM_SELL_CHECK_GRANT_AMOUNT).is_ok());
     }
+
+    #[test]
+    fn token_jupiter_policy() {
+        assert_eq!(TOKEN_NON_SOL_CHECK_GRANT_AMOUNT, 0);
+        assert!(require_token_amounts(0, 1).is_err());
+        assert!(require_token_amounts(1, 0).is_ok());
+        assert!(require_token_amounts(1, 1).is_ok());
+        let a = Pubkey::new_unique();
+        let b = Pubkey::new_unique();
+        assert!(require_token_mints_distinct(&a, &b).is_ok());
+        assert!(require_token_mints_distinct(&a, &a).is_err());
+        assert!(require_wrap_mint(false, &a).is_ok());
+        assert!(require_wrap_mint(true, &WSOL_MINT).is_ok());
+        assert!(require_wrap_mint(true, &a).is_err());
+        assert!(require_jupiter_program(&JUPITER_V6_PROGRAM_ID).is_ok());
+        assert!(require_jupiter_program(&crate::ID).is_err());
+        assert!(require_jupiter_program(&PUMP_PROGRAM_ID).is_err());
+        assert!(require_nonempty_jupiter_data(&[]).is_err());
+        assert!(require_nonempty_jupiter_data(&[1, 2, 3]).is_err());
+        let mut data = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        data.extend_from_slice(&1_000u64.to_le_bytes());
+        assert!(require_nonempty_jupiter_data(&data).is_ok());
+        assert!(require_jupiter_in_amount(&data, 1_000).is_ok());
+        assert!(require_jupiter_in_amount(&data, 2).is_err());
+        assert_eq!(token_check_grant_amount(&WSOL_MINT, false, 9), 9);
+        assert_eq!(token_check_grant_amount(&WSOL_MINT, true, 9), 9);
+        assert_eq!(token_check_grant_amount(&a, false, 9), 0);
+        assert_eq!(token_check_grant_amount(&a, true, 9), 9);
+    }
+
 }
+
 
 /// Trader must already hold spendable + 0-byte rent.
 /// pump_buy / pump_create / pump_amm_buy must not raw-debit vault→trader

@@ -225,3 +225,32 @@ pub struct PumpTraderWithdrawn {
     pub lamports: u64,
 }
 
+/// Grant-gated Jupiter v6 buy. Trader is the swapper. Vault is never user.
+/// Quote mint may be WSOL, official USDC, or another SPL / Token-2022 mint.
+#[event]
+pub struct TokenBought {
+    pub vault: Pubkey,
+    pub trader: Pubkey,
+    pub input_mint: Pubkey,
+    pub output_mint: Pubkey,
+    pub in_amount: u64,
+    pub min_out: u64,
+    pub agent: Pubkey,
+    pub grant: Pubkey,
+    pub generation: u32,
+}
+
+/// Grant-gated Jupiter v6 sell. Trader is the swapper. Vault is never user.
+/// Selling tokens for quote is check_grant(0). Selling WSOL/SOL is check_grant(sol).
+#[event]
+pub struct TokenSold {
+    pub vault: Pubkey,
+    pub trader: Pubkey,
+    pub input_mint: Pubkey,
+    pub output_mint: Pubkey,
+    pub in_amount: u64,
+    pub min_out: u64,
+    pub agent: Pubkey,
+    pub grant: Pubkey,
+    pub generation: u32,
+}

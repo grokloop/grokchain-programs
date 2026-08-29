@@ -25,6 +25,7 @@ const SWAP_RS: &str = include_str!("instructions/swap.rs");
 const DEPLOY_RS: &str = include_str!("instructions/deploy.rs");
 const PUMP_RS: &str = include_str!("instructions/pump.rs");
 const PUMP_AMM_RS: &str = include_str!("instructions/pump_amm.rs");
+const TOKEN_RS: &str = include_str!("instructions/token.rs");
 const PUMP_TRADER_RS: &str = include_str!("instructions/pump_trader.rs");
 const COMMON_RS: &str = include_str!("instructions/common.rs");
 const STATE_RS: &str = include_str!("state.rs");
@@ -177,6 +178,8 @@ fn no_limit_order_primitive() {
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
     assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
+    assert!(LIB_RS.contains("pub fn token_buy"));
+    assert!(LIB_RS.contains("pub fn token_sell"));
 }
 
 #[test]
@@ -195,6 +198,12 @@ fn invoke_signed_only_in_pump_adapter() {
     assert!(PUMP_AMM_RS.contains("SEED_PUMP_TRADER"));
     assert!(PUMP_AMM_RS.contains("trader_signer_seeds"));
     assert!(!PUMP_AMM_RS.contains("&[SEED_SPEND_VAULT"));
+    assert!(TOKEN_RS.contains("invoke_signed("));
+    assert!(TOKEN_RS.contains("SEED_PUMP_TRADER"));
+    assert!(TOKEN_RS.contains("trader_signer_seeds"));
+    assert!(!TOKEN_RS.contains("&[SEED_SPEND_VAULT"));
+    assert!(TOKEN_RS.contains("program_id: JUPITER_V6_PROGRAM_ID"));
+    assert!(TOKEN_RS.contains("address = crate::JUPITER_V6_PROGRAM_ID"));
     assert!(PUMP_AMM_RS.contains("encode_pump_amm_buy_exact_quote_in"));
     assert!(PUMP_AMM_RS.contains("encode_pump_amm_sell"));
     assert!(PUMP_AMM_RS.contains("Never PumpSwap `user`") || PUMP_AMM_RS.contains("never user"));
@@ -305,8 +314,9 @@ fn pump_amm_sell_official_sell_not_sell_v2() {
     assert!(PUMP_AMM_RS.contains("Do NOT sweep trader") || PUMP_AMM_RS.contains("Do not sweep trader"));
     assert!(PUMP_AMM_RS.contains("there is no sell_v2") || PUMP_AMM_RS.contains("no sell_v2"));
     assert!(!PUMP_AMM_RS.contains("encode_pump_sell_v2"));
-    assert!(!LIB_RS.contains("jupiter"));
+    // pump_amm stays not-Jupiter. token_buy/token_sell are the Jupiter path (lib.rs names them).
     assert!(!PUMP_AMM_RS.contains("Jupiter"));
+    assert!(LIB_RS.contains("pub fn token_buy"));
     assert_eq!(policy::PUMP_SELL_CHECK_GRANT_AMOUNT, 0);
     assert_eq!(policy::PUMP_AMM_SELL_CHECK_GRANT_AMOUNT, 0);
     assert!(policy::require_pump_amm_sell_account_count(24).is_ok());
@@ -362,8 +372,8 @@ fn pump_curve_buy_no_in_ix_vault_debit_requires_prefund() {
     // sell spends tokens, not SOL — no debit, no prefund
     assert!(!sell.contains("debit_spend_vault"));
     assert!(!sell.contains("require_pump_trader_prefunded"));
-    // named PumpTrade accounts stay (live mouth)
-    assert!(PUMP_RS.contains("pub pump_trader: UncheckedAccount"));
+    // trader is remaining only (named PumpTrade + remaining trader is UnbalancedInstruction)
+    assert!(!PUMP_RS.contains("pub pump_trader: UncheckedAccount"));
     assert!(PUMP_RS.contains("pub struct PumpTrade"));
 }
 
@@ -406,9 +416,9 @@ fn pump_curve_buy_create_no_in_ix_vault_debit() {
     let buy_start = PUMP_RS.find("pub fn buy_handler").expect("buy_handler");
     let sell_start = PUMP_RS.find("pub fn sell_handler").expect("sell_handler");
     let create_start = PUMP_RS.find("pub fn create_handler").expect("create_handler");
-    let buy = &PUMP_RS[buy_start:sell_start];
-    let sell = &PUMP_RS[sell_start:create_start];
-    let create = &PUMP_RS[create_start:];
+    let buy = &PUMP_RS[buy_start..sell_start];
+    let sell = &PUMP_RS[sell_start..create_start];
+    let create = &PUMP_RS[create_start..];
     assert!(buy.contains("require_pump_trader_prefunded"));
     assert!(!buy.contains("debit_spend_vault"));
     assert!(!sell.contains("debit_spend_vault"));
@@ -423,8 +433,56 @@ fn withdraw_pump_trader_is_separate_ix() {
     assert!(PUMP_TRADER_RS.contains("pub fn withdraw"));
     assert!(PUMP_TRADER_RS.contains("PumpTraderWithdrawn"));
     assert!(PUMP_TRADER_RS.contains("system_instruction::transfer"));
-    assert!(!PUMP_TRADER_RS.contains("try_debit_program_owned"));
+    assert!(!PUMP_TRADER_RS.contains("try_debit_program_owned("));
     assert!(!PUMP_RS.contains("fn withdraw"));
     assert_eq!(IntentsError::WithdrawRemainingAccountsOdd as u32, 43);
     assert_eq!(IntentsError::InsufficientPumpTrader as u32, 48);
+}
+
+#[test]
+fn token_buy_sell_is_jupiter_v6_not_old_swap() {
+    assert!(LIB_RS.contains("pub fn token_buy"));
+    assert!(LIB_RS.contains("pub fn token_sell"));
+    assert!(TOKEN_RS.contains("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4") || TOKEN_RS.contains("JUPITER_V6_PROGRAM_ID"));
+    assert!(TOKEN_RS.contains("invoke_signed("));
+    assert!(TOKEN_RS.contains("trader_signer_seeds"));
+    assert!(!TOKEN_RS.contains("&[SEED_SPEND_VAULT"));
+    assert!(TOKEN_RS.contains("Never vault"));
+    assert!(TOKEN_RS.contains("Do not unwrap") || TOKEN_RS.contains("do not unwrap"));
+    assert!(!TOKEN_RS.contains("data: vec![]"));
+    assert!(TOKEN_RS.contains("require_jupiter_in_amount") || TOKEN_RS.contains("require_jupiter"));
+    // old swap stays a SOL send
+    assert!(SWAP_RS.contains("Not Jupiter. Not an AMM."));
+    assert!(!SWAP_RS.contains("invoke_signed("));
+    assert!(!SWAP_RS.contains("JUPITER"));
+    assert_eq!(
+        crate::JUPITER_V6_PROGRAM_ID.to_string(),
+        "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
+    );
+    assert_eq!(
+        crate::USDC_MINT.to_string(),
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    );
+    assert!(policy::require_jupiter_program(&crate::JUPITER_V6_PROGRAM_ID).is_ok());
+    assert!(policy::require_jupiter_program(&PUMP_PROGRAM_ID).is_err());
+    assert_eq!(IntentsError::JupiterProgramMismatch as u32, 49);
+    assert_eq!(IntentsError::JupiterEmptyDataForbidden as u32, 50);
+    assert_eq!(IntentsError::JupiterInAmountMismatch as u32, 51);
+    assert_eq!(IntentsError::JupiterSourceOwnerNotTrader as u32, 52);
+    assert_eq!(IntentsError::JupiterDestOwnerNotTrader as u32, 53);
+    assert_eq!(IntentsError::TokenWrapMintMustBeWsol as u32, 54);
+    assert_eq!(policy::TOKEN_NON_SOL_CHECK_GRANT_AMOUNT, 0);
+    assert_eq!(policy::token_check_grant_amount(&crate::WSOL_MINT, true, 5), 5);
+    assert_eq!(policy::token_check_grant_amount(&crate::USDC_MINT, false, 5), 0);
+}
+
+#[test]
+fn token_adapter_does_not_debit_vault_in_ix() {
+    assert!(!TOKEN_RS.contains("debit_spend_vault"));
+    assert!(TOKEN_RS.contains("require_pump_trader_prefunded"));
+    assert!(TOKEN_RS.contains("wrap_sol_to_wsol"));
+    assert!(TOKEN_RS.contains("check_grant"));
+    assert!(STATE_RS.contains("pub struct TokenBuyArgs"));
+    assert!(STATE_RS.contains("pub struct TokenSellArgs"));
+    assert!(STATE_RS.contains("pub jupiter_data: Vec<u8>"));
 }

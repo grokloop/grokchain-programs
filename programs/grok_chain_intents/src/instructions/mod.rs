@@ -9,6 +9,7 @@ pub mod pump_amm;
 pub mod pump_trader;
 pub mod spend_vault;
 pub mod swap;
+pub mod token;
 
 pub use call::*;
 pub use deploy::*;
@@ -19,6 +20,7 @@ pub use pump_amm::*;
 pub use pump_trader::*;
 pub use spend_vault::*;
 pub use swap::*;
+pub use token::*;
 
 use anchor_lang::prelude::*;
 

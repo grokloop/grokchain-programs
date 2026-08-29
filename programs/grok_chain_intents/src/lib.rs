@@ -113,6 +113,14 @@ pub mod grok_chain_intents {
     pub fn pump_amm_sell(ctx: Context<PumpAmmTrade>, args: PumpAmmSellArgs) -> Result<()> {
         instructions::pump_amm::sell_handler(ctx, args)
     }
+
+    pub fn token_buy(ctx: Context<TokenTrade>, args: TokenBuyArgs) -> Result<()> {
+        instructions::token::token_buy_handler(ctx, args)
+    }
+
+    pub fn token_sell(ctx: Context<TokenTrade>, args: TokenSellArgs) -> Result<()> {
+        instructions::token::token_sell_handler(ctx, args)
+    }
 }
 
 pub fn spend_vault_pda(program_id: &Pubkey, grok_account: &Pubkey) -> (Pubkey, u8) {
@@ -173,7 +181,7 @@ mod spec_lock {
     }
 
     #[test]
-    fn error_discriminants_0_to_48() {
+    fn error_discriminants_0_to_54() {
         assert_eq!(IntentsError::UnauthorizedRoot as u32, 0);
         assert_eq!(IntentsError::AgentMismatch as u32, 1);
         assert_eq!(IntentsError::ZeroPayAmount as u32, 2);
@@ -224,6 +232,12 @@ mod spec_lock {
         assert_eq!(IntentsError::WithdrawTokenMintMismatch as u32, 46);
         assert_eq!(IntentsError::WithdrawTokenDestOwnerNotRoot as u32, 47);
         assert_eq!(IntentsError::InsufficientPumpTrader as u32, 48);
+        assert_eq!(IntentsError::JupiterProgramMismatch as u32, 49);
+        assert_eq!(IntentsError::JupiterEmptyDataForbidden as u32, 50);
+        assert_eq!(IntentsError::JupiterInAmountMismatch as u32, 51);
+        assert_eq!(IntentsError::JupiterSourceOwnerNotTrader as u32, 52);
+        assert_eq!(IntentsError::JupiterDestOwnerNotTrader as u32, 53);
+        assert_eq!(IntentsError::TokenWrapMintMustBeWsol as u32, 54);
     }
 
     #[test]
@@ -277,6 +291,10 @@ mod spec_lock {
         assert_eq!(disc("event", "PumpAmmSold"), [66, 145, 209, 9, 84, 220, 173, 113]);
         assert_eq!(disc("global", "withdraw_pump_trader"), [188, 237, 135, 114, 143, 224, 45, 178]);
         assert_eq!(disc("event", "PumpTraderWithdrawn"), [55, 235, 116, 220, 179, 244, 66, 235]);
+        assert_eq!(disc("global", "token_buy"), [116, 167, 118, 40, 127, 96, 55, 234]);
+        assert_eq!(disc("global", "token_sell"), [154, 76, 173, 221, 122, 208, 158, 103]);
+        assert_eq!(disc("event", "TokenBought"), [197, 182, 3, 228, 82, 236, 7, 143]);
+        assert_eq!(disc("event", "TokenSold"), [88, 61, 1, 247, 185, 6, 252, 86]);
     }
 
     #[test]
@@ -430,6 +448,22 @@ mod spec_lock {
         assert!(policy::require_nonempty_pump_amm_sell_data(&data).is_ok());
         let buy = encode_pump_amm_buy_exact_quote_in(1, 1, true);
         assert!(policy::require_nonempty_pump_amm_sell_data(&buy).is_err());
+    }
+
+    #[test]
+    fn token_buy_sell_policy_without_runtime() {
+        assert!(policy::require_token_amounts(0, 1).is_err());
+        assert!(policy::require_token_amounts(1, 0).is_ok());
+        let mut data = vec![9u8; 8];
+        data.extend_from_slice(&42u64.to_le_bytes());
+        assert!(policy::require_nonempty_jupiter_data(&data).is_ok());
+        assert!(policy::require_jupiter_in_amount(&data, 42).is_ok());
+        assert!(policy::require_jupiter_in_amount(&data, 1).is_err());
+        assert!(policy::require_jupiter_program(&crate::JUPITER_V6_PROGRAM_ID).is_ok());
+        assert!(policy::require_wrap_mint(true, &crate::WSOL_MINT).is_ok());
+        assert_eq!(policy::token_check_grant_amount(&crate::WSOL_MINT, false, 7), 7);
+        assert_eq!(policy::token_check_grant_amount(&crate::USDC_MINT, false, 7), 0);
+        assert_eq!(policy::TOKEN_NON_SOL_CHECK_GRANT_AMOUNT, 0);
     }
 
 }

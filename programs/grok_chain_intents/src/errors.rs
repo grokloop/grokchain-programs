@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-/// SPEC.md §8. Discriminants 0..=18 are stable. Next free code after this file: 49.
+/// SPEC.md §8. Discriminants 0..=18 are stable. Next free code after this file: 55.
 /// 21 PumpUserMustBeVault is unused (vault is never pump user).
 #[error_code]
 pub enum IntentsError {
@@ -103,4 +103,16 @@ pub enum IntentsError {
     WithdrawTokenDestOwnerNotRoot = 47,
     #[msg("pump-trader SOL withdraw would drop below rent-exempt minimum")]
     InsufficientPumpTrader = 48,
+    #[msg("inner program is not official Jupiter v6")]
+    JupiterProgramMismatch = 49,
+    #[msg("Jupiter instruction data must be official swap-instructions data; empty data is forbidden")]
+    JupiterEmptyDataForbidden = 50,
+    #[msg("Jupiter in_amount does not match args")]
+    JupiterInAmountMismatch = 51,
+    #[msg("Jupiter source token account owner is not the pump-trader")]
+    JupiterSourceOwnerNotTrader = 52,
+    #[msg("Jupiter dest token account owner is not the pump-trader")]
+    JupiterDestOwnerNotTrader = 53,
+    #[msg("wrap_sol requires input mint to be wrapped SOL")]
+    TokenWrapMintMustBeWsol = 54,
 }

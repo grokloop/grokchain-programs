@@ -2,7 +2,7 @@
 
 Spec tree and local Anchor crate for **Grok Chain** intents + paymaster on Solana L1.
 
-This folder is owned by **PROGRAMS**. It is the intent router (`pay`, `swap`, `deploy`, `call`, `pump_*`, `pump_amm_*`) and the per-human spend vault + paymaster. It is not CORE (identity/policy), not the website, not brand, and not lore.
+This folder is owned by **PROGRAMS**. It is the intent router (`pay`, `swap`, `deploy`, `call`, `pump_*`, `pump_amm_*`, `token_buy`, `token_sell`) and the per-human spend vault + paymaster. It is not CORE (identity/policy), not the website, not brand, and not lore.
 
 | Path | What it is |
 | --- | --- |
@@ -57,11 +57,12 @@ Root-signed: `init_spend_vault`, `fund_spend_vault`, `withdraw_spend_vault`, `in
 Agent-signed, all grant-gated (one `check_grant`, abort on CORE error, optional sponsor):
 
 - `pay` — SpendVault → recipient. Amount must be > 0.
-- `swap` — grant-gated SOL send to `out_destination` with `amount_in >= min_out`. Not a DEX. Not Jupiter. Not SPL. Not an AMM.
+- `swap` — grant-gated SOL send to `out_destination` with `amount_in >= min_out`. Not a DEX. Not Jupiter. Not SPL. Not an AMM. Unchanged.
 - `deploy` — `check_grant(0)` + `DeployRequested` event. Not a BPF deploy. Does not upload an ELF.
 - `call` — `check_grant(amount)` (0 = policy ping). Optional vault debit. Optional `invoke` of remaining_accounts into an inner program with empty ix data.
 - `pump_buy` / `pump_sell` / `pump_create` — official pump.fun bonding curve only (`6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P`). Trader PDA is user. Vault is never user.
-- `pump_amm_buy` / `pump_amm_sell` — PumpSwap only (`pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA`). Not the curve. Not Jupiter.
+- `pump_amm_buy` / `pump_amm_sell` — PumpSwap only (`pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA`). Not the curve. Not Jupiter. Quote mint must be WSOL.
+- `token_buy` / `token_sell` — grant-gated Jupiter v6 (`JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4`). Pump-trader PDA is the swapper. Quote mint may be WSOL, official USDC (`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`), or another SPL / Token-2022 mint. Paying with native SOL/WSOL: `check_grant(sol_in)`. Paying with USDC / another token already on the trader: `check_grant(0)`. Native SOL is prefunded onto the trader (`fund_pump_trader`); no in-ix vault debit (UnbalancedInstruction). Adapter wraps SOL when asked. Does not unwrap or sweep. Remaining accounts come from Jupiter swap-instructions. Not an AMM of our own. Old `swap` is still the SOL send.
 
 `IntentStub` (error 11) is reserved.
 
