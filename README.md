@@ -1,5 +1,46 @@
 # grok-chain-programs
 
+**The on-chain half of letting an AI agent spend money without holding a wallet.**
+
+This is the Solana program an agent's payments actually run through. A human
+funds a vault and issues a capability grant — a cap, an expiry, an allowlist of
+payees. The agent signs intents against that grant. The program enforces the
+limits; nothing is trusted to the client.
+
+Live on Solana mainnet as `3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw`.
+If you just want to *use* this, you want [grokchain-mcp](https://github.com/grokloop/grokchain-mcp)
+instead — this repo is the program source.
+
+## What it enforces
+
+| Guarantee | How |
+| --- | --- |
+| The agent cannot overspend | `check_grant` meters every debit against the cap |
+| The agent cannot pay strangers | `pay_token` checks a root-owned merchant allowlist |
+| A subscription cannot double-charge | `last_paid_period` advances in the same tx that pays |
+| A swap cannot be sandwiched into a bad fill | balances are snapshotted around the CPI, `min_out` enforced after |
+| The agent cannot pay its own gas | it is never the fee payer; the relayer is reimbursed from a paymaster |
+| A human can stop it instantly | `revise_grant` to `cap = spent` blocks buys but still permits sells |
+
+That last row matters more than it looks: `revoke_grant` also blocks sells,
+which strands whatever the agent is holding. Revising the cap down is the
+correct soft kill.
+
+## Verifying what is deployed
+
+The binary running on mainnet was built from this tree. To check rather than
+trust:
+
+```
+solana program dump 3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw live.so --url mainnet-beta
+sha256sum live.so
+```
+
+Live at the time of writing: `ed4582d2a800c69d7ce257536244ac1fced9a5141f9fe0ef73ef1e1bb3072eb7`
+(first 538,024 bytes; the dump is zero-padded to the 645,048-byte allocation).
+
+---
+
 Spec tree and local Anchor crate for **Grok Chain** intents + paymaster on Solana L1.
 
 This folder is owned by **PROGRAMS**. It is the intent router (`pay`, `pay_token`, `swap`, `deploy`, `call`, `token_buy`, `token_sell`) and the per-human spend vault + paymaster. Pump trade ixs were cut from the live MAINNET binary for size; `init`/`fund`/`withdraw_pump_trader` stay. It is not CORE (identity/policy), not the website, not brand, and not lore.
