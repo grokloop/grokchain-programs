@@ -302,8 +302,33 @@ pub fn token_check_grant_amount(input_mint: &Pubkey, wrap_sol: bool, in_amount: 
     }
 }
 
-pub fn require_token_amounts(in_amount: u64, _min_out: u64) -> Result<()> {
+/// Pre-flight only. `min_out` cannot be judged before the swap runs, so it is
+/// NOT checked here — see `enforce_swap_outcome`, which is where the floor is
+/// actually held. Silently ignoring it here was the bug.
+pub fn require_token_amounts(in_amount: u64) -> Result<()> {
     require!(in_amount > 0, IntentsError::ZeroAmount);
+    Ok(())
+}
+
+/// Bound a Jupiter swap by what it ACTUALLY did to the trader's own accounts.
+///
+/// Jupiter routes are built off chain, so the instruction data belongs to the
+/// client, not to us. Parsing that data cannot be trusted: a field may sit at
+/// any offset, and `require_jupiter_in_amount` only proves that some bytes
+/// appear somewhere in it. Balances are the ground truth — whatever the route
+/// did, the trader must not have spent more than it authorised, nor received
+/// less than its floor.
+///
+/// This makes the route's contents irrelevant, which is the only defence that
+/// holds against a data blob we did not build.
+pub fn enforce_swap_outcome(
+    spent: u64,
+    received: u64,
+    in_amount: u64,
+    min_out: u64,
+) -> Result<()> {
+    require!(spent <= in_amount, IntentsError::JupiterOverspent);
+    require!(received >= min_out, IntentsError::JupiterMinOutNotMet);
     Ok(())
 }
 
@@ -358,6 +383,23 @@ mod tests {
         assert!(require_swap_amounts(5, 6).is_err());
         assert!(require_swap_amounts(5, 5).is_ok());
         assert!(require_swap_amounts(6, 5).is_ok());
+    }
+
+    #[test]
+    fn swap_outcome_bounds_a_route_we_did_not_build() {
+        // exact fill
+        assert!(enforce_swap_outcome(1_000, 500, 1_000, 500).is_ok());
+        // better than asked for: spent less, received more
+        assert!(enforce_swap_outcome(900, 600, 1_000, 500).is_ok());
+        // took more of the input than authorised
+        assert!(enforce_swap_outcome(1_001, 500, 1_000, 500).is_err());
+        // returned less than the floor - the case that was unenforced
+        assert!(enforce_swap_outcome(1_000, 499, 1_000, 500).is_err());
+        // a route that took everything and returned nothing
+        assert!(enforce_swap_outcome(1_000, 0, 1_000, 1).is_err());
+        // min_out 0 still bounds the input side
+        assert!(enforce_swap_outcome(1_000, 0, 1_000, 0).is_ok());
+        assert!(enforce_swap_outcome(1_001, 0, 1_000, 0).is_err());
     }
 
     #[test]
@@ -502,9 +544,8 @@ mod tests {
     #[test]
     fn token_jupiter_policy() {
         assert_eq!(TOKEN_NON_SOL_CHECK_GRANT_AMOUNT, 0);
-        assert!(require_token_amounts(0, 1).is_err());
-        assert!(require_token_amounts(1, 0).is_ok());
-        assert!(require_token_amounts(1, 1).is_ok());
+        assert!(require_token_amounts(0).is_err());
+        assert!(require_token_amounts(1).is_ok());
         let a = Pubkey::new_unique();
         let b = Pubkey::new_unique();
         assert!(require_token_mints_distinct(&a, &b).is_ok());

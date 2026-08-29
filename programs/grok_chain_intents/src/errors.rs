@@ -115,4 +115,8 @@ pub enum IntentsError {
     JupiterDestOwnerNotTrader = 53,
     #[msg("wrap_sol requires input mint to be wrapped SOL")]
     TokenWrapMintMustBeWsol = 54,
+    #[msg("Jupiter route spent more of the input than the intent authorised")]
+    JupiterOverspent = 55,
+    #[msg("Jupiter route returned less than min_out")]
+    JupiterMinOutNotMet = 56,
 }

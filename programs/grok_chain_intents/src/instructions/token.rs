@@ -68,7 +68,7 @@ pub fn token_sell_handler(ctx: Context<TokenTrade>, args: TokenSellArgs) -> Resu
 }
 
 fn trade(ctx: Context<TokenTrade>, args: &TokenBuyArgs, is_sell: bool) -> Result<()> {
-    policy::require_token_amounts(args.in_amount, args.min_out)?;
+    policy::require_token_amounts(args.in_amount)?;
     policy::require_token_mints_distinct(&args.input_mint, &args.output_mint)?;
     policy::require_wrap_mint(args.wrap_sol, &args.input_mint)?;
     common::precheck_sponsor(
@@ -150,10 +150,23 @@ fn trade(ctx: Context<TokenTrade>, args: &TokenBuyArgs, is_sell: bool) -> Result
         )?;
     }
 
+    // Snapshot AFTER any wrap, so a wrapped input counts as available rather
+    // than as spend. These two numbers are the only thing that actually bounds
+    // a route we did not build.
+    let source_before = token_account_amount(source)?;
+    let dest_before = token_account_amount(dest)?;
+
     let data = args.jupiter_data.clone();
     policy::require_nonempty_jupiter_data(&data)?;
     let ix = build_jupiter_ix(ctx.remaining_accounts, &trader, data)?;
     invoke_signed(&ix, ctx.remaining_accounts, &[trader_signer_seeds])?;
+
+    // What the route DID, measured on our own accounts. saturating_sub because a
+    // source that somehow grew is not a spend, and a destination that shrank is
+    // not a receipt — both are caught by the bounds below.
+    let spent = source_before.saturating_sub(token_account_amount(source)?);
+    let received = token_account_amount(dest)?.saturating_sub(dest_before);
+    policy::enforce_swap_outcome(spent, received, args.in_amount, args.min_out)?;
 
     // Do not unwrap. Do not sweep trader → vault in this ix.
 
@@ -172,6 +185,8 @@ fn trade(ctx: Context<TokenTrade>, args: &TokenBuyArgs, is_sell: bool) -> Result
             output_mint: args.output_mint,
             in_amount: args.in_amount,
             min_out: args.min_out,
+            spent,
+            received,
             agent: ctx.accounts.agent.key(),
             grant: ctx.accounts.grant.key(),
             generation: ctx.accounts.grant.generation,
@@ -184,6 +199,8 @@ fn trade(ctx: Context<TokenTrade>, args: &TokenBuyArgs, is_sell: bool) -> Result
             output_mint: args.output_mint,
             in_amount: args.in_amount,
             min_out: args.min_out,
+            spent,
+            received,
             agent: ctx.accounts.agent.key(),
             grant: ctx.accounts.grant.key(),
             generation: ctx.accounts.grant.generation,
@@ -208,6 +225,13 @@ fn find_trader_in_remaining<'a, 'info>(
     }
     err!(IntentsError::PumpUserMustBeTrader)
 }
+/// Raw token amount at offset 64..72 of an SPL / Token-2022 account.
+fn token_account_amount(info: &AccountInfo) -> Result<u64> {
+    let data = info.try_borrow_data()?;
+    require!(data.len() >= 72, IntentsError::JupiterSourceOwnerNotTrader);
+    Ok(u64::from_le_bytes(data[64..72].try_into().unwrap()))
+}
+
 fn find_trader_token_account<'a, 'info>(
     remaining: &'a [AccountInfo<'info>],
     trader: &Pubkey,
