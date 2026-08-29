@@ -17,7 +17,8 @@
 //! to merchants the human already approved. That turns a total loss into a
 //! bounded one, and it is the reason this is safe enough to leave running.
 //!
-//! MERGE NOTE: written against the public crate at 29e5787, NOT COMPILED.
+//! STATUS: live on Solana mainnet since slot 442622147. A registry is deployed
+//! and pinned to official USDC, and pay_token has settled against it.
 
 use anchor_lang::prelude::*;
 

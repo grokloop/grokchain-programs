@@ -35,9 +35,10 @@
 //! and a second denomination needs a second agent. A grant is per
 //! (grok_account, agent), so that costs nothing and keeps the cap meaningful.
 //!
-//! MERGE NOTE: written against the public crate at 29e5787 but NOT COMPILED — no
-//! Rust toolchain was available here. Expect the first `cargo build` to want
-//! import fixes. New error codes append after 54, the current maximum.
+//! STATUS: live on Solana mainnet since slot 442622147, and exercised — a real
+//! 0.01 USDC payment settled in
+//! 4nhDmpmyzMu9UkRcMphHb41fkgu7hXa3CfwvZ4SKDBcTMDLbHytJuAm46Hz6suFLCRu5Rw1fTipyjJUSnv1WxBBx
+//! with the relayer as fee payer and the agent holding nothing.
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{

@@ -31,7 +31,15 @@
 //! payment at once. Three scopes, all in the human's hands, none of them
 //! requiring the merchant to cooperate.
 //!
-//! MERGE NOTE: written against the public crate at 29e5787, NOT COMPILED.
+//! STATUS: live on Solana mainnet since slot 442622147, but NOT YET EXERCISED —
+//! no subscription has been created or paid on chain. The logic below is
+//! reviewed and unit-tested, not proven in execution. Treat it as untested
+//! until a create + pay + repeat-pay-must-fail run exists.
+//!
+//! To exercise it without waiting a day (MIN_PERIOD_SECONDS is 86_400): create
+//! with start_unix a few days in the past so the current period is already
+//! non-zero, pay it, then retry the same period and expect
+//! SubscriptionAlreadyPaid.
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{
