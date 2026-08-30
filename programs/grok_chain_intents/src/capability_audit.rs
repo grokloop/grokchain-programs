@@ -170,12 +170,16 @@ fn no_limit_order_primitive() {
     assert!(!LIB_RS.contains("limit_order"));
     assert!(!LIB_RS.contains("place_order"));
     assert!(!LIB_RS.contains("cancel_order"));
-    // MAINNET size cut: pump trade ixs removed. Trader vault ixs stay.
+    // MAINNET size cut: the four pump TRADE ixs stay out. Buying a pump coin
+    // goes through Jupiter (token_buy), which reaches curve and graduated mints
+    // alike, so re-adding them would spend ~50KB to duplicate a working path.
     assert!(!LIB_RS.contains("pub fn pump_buy"));
     assert!(!LIB_RS.contains("pub fn pump_sell"));
-    assert!(!LIB_RS.contains("pub fn pump_create"));
     assert!(!LIB_RS.contains("pub fn pump_amm_buy"));
     assert!(!LIB_RS.contains("pub fn pump_amm_sell"));
+    // LAUNCHING is the exception: Jupiter cannot mint a new coin, so pump_create
+    // has no substitute and is carried deliberately.
+    assert!(LIB_RS.contains("pub fn pump_create"));
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
     assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
@@ -265,7 +269,7 @@ fn create_v2_disc_mint_must_be_signer() {
     assert!(PUMP_RS.contains("require_pump_mint_is_signer"));
     assert!(PUMP_RS.contains("PumpMintMustBeSigner"));
     assert!(PUMP_RS.contains("encode_pump_create_v2"));
-    assert!(!LIB_RS.contains("pub fn pump_create"));
+    assert!(LIB_RS.contains("pub fn pump_create"));
 }
 
 #[test]
@@ -281,17 +285,23 @@ fn create_user_must_be_trader_vault_as_user_fails() {
 
 #[test]
 fn capability_table_buy_sell_launch_via_adapter_limit_fail() {
-    let buy = "CUT";
-    let sell = "CUT";
+    // Buying and selling a pump coin is CUT from this program on purpose:
+    // token_buy/token_sell route through Jupiter, which reaches both curve and
+    // graduated mints. Launching has no such substitute — nothing routes a mint
+    // into existence — so create is the one pump ix carried here.
+    let buy = "JUPITER";
+    let sell = "JUPITER";
     let limit = "FAIL";
-    let launch = "CUT";
-    assert_eq!(buy, "CUT");
-    assert_eq!(sell, "CUT");
+    let launch = "ADAPTER";
+    assert_eq!(buy, "JUPITER");
+    assert_eq!(sell, "JUPITER");
     assert_eq!(limit, "FAIL");
-    assert_eq!(launch, "CUT");
+    assert_eq!(launch, "ADAPTER");
     assert!(!LIB_RS.contains("pub fn pump_buy"));
     assert!(!LIB_RS.contains("pub fn pump_sell"));
-    assert!(!LIB_RS.contains("pub fn pump_create"));
+    assert!(LIB_RS.contains("pub fn pump_create"));
+    assert!(LIB_RS.contains("pub fn token_buy"));
+    assert!(LIB_RS.contains("pub fn token_sell"));
     assert!(LIB_RS.contains("pub fn init_pump_trader"));
     assert!(LIB_RS.contains("pub fn fund_pump_trader"));
     assert!(LIB_RS.contains("pub fn withdraw_pump_trader"));
