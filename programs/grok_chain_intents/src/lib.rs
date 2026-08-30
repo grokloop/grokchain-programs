@@ -79,6 +79,13 @@ pub mod grok_chain_intents {
         instructions::call::handler(ctx, args)
     }
 
+    /// pump.fun create_v2. Launch only — buy is Jupiter (token_buy).
+    /// remaining[0] mint must be a client-signed Token-2022 keypair.
+    /// Creator recorded on chain is grok_account.root, not the agent.
+    pub fn pump_create(ctx: Context<PumpTrade>, args: PumpCreateArgs) -> Result<()> {
+        instructions::pump::create_handler(ctx, args)
+    }
+
     pub fn init_pump_trader(ctx: Context<InitPumpTrader>) -> Result<()> {
         instructions::pump_trader::init(ctx)
     }
