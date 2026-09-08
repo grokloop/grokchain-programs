@@ -254,3 +254,19 @@ pub struct SubGrant {
 impl SubGrant {
     pub const SPACE: usize = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8 + 1 + 1 + 4 + 1;
 }
+
+/// Sponsorship fee rate, in raw $GrokChain units, charged per sponsored intent.
+///
+/// Absent or zero means no fee. There is deliberately no field recording a
+/// destination: collected fees have exactly one exit, and it is the burn.
+#[account]
+pub struct SponsorFeeConfig {
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub fee_per_intent: u64,
+    pub bump: u8,
+}
+
+impl SponsorFeeConfig {
+    pub const SPACE: usize = 8 + 32 + 32 + 8 + 1;
+}

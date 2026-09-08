@@ -1,3 +1,13 @@
+> ## Historical — devnet rehearsal
+>
+> Grok Chain runs on **mainnet** now. INTENTS is
+> `3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw` and CORE is
+> `44fxwzuEyNxZtgDr87mTtMYYJ1LJm6cB5aZNLyBsPjNd`.
+>
+> The devnet ids below were the rehearsal and are no longer the deployment. They
+> are kept because a rehearsal that happened is worth recording, not because
+> anything should be pointed at them.
+
 # grok_chain_intents — Solana DEVNET
 
 Cluster: **devnet** (`https://api.devnet.solana.com`)  

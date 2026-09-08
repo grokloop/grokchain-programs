@@ -1,3 +1,17 @@
+> ## Historical — superseded
+>
+> This is a point-in-time review from **2026-08-28**, kept for the audit trail. It
+> describes the tree as it was on that date, and several of its statements are no
+> longer true:
+>
+> - It says no mainnet transaction was sent. Mainnet transactions have since been sent.
+> - It says no real SOL was spent. Real SOL has been spent.
+> - It says INTENTS was not deployed on public Solana. INTENTS is live on mainnet at `3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw`.
+> - It treats the pump trade instructions as forthcoming. They were deployed, then **cut** from the binary for size; only `pump_create` remains.
+>
+> For what is actually live today, read [`../../README.md`](../../README.md).
+> Do not treat anything below as a current statement of fact.
+
 # Audit: pump.fun buy / sell / limit / launch vs swap / deploy / call
 
 Date: 2026-08-28 IST. Scope: can `grok_chain_intents` `swap`, `deploy`, and `call` perform a pump.fun bonding-curve buy, sell, limit order, or coin launch? BUILD + TEST + AUDIT only.

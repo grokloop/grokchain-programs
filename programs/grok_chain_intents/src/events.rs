@@ -340,6 +340,29 @@ pub struct SubscriptionPaid {
 }
 
 #[event]
+pub struct SponsorFeeSet {
+    pub grok_account: Pubkey,
+    pub root: Pubkey,
+    pub fee_per_intent: u64,
+}
+
+#[event]
+pub struct SponsorFeeCollected {
+    pub grok_account: Pubkey,
+    pub agent: Pubkey,
+    pub amount: u64,
+}
+
+/// The only event that ever reports value leaving the fee vault, because the
+/// burn is the only way it can.
+#[event]
+pub struct SponsorFeesBurned {
+    pub grok_account: Pubkey,
+    pub amount: u64,
+    pub burner: Pubkey,
+}
+
+#[event]
 pub struct SubGrantIssued {
     pub grok_account: Pubkey,
     pub parent: Pubkey,

@@ -149,40 +149,52 @@ pub enum IntentsError {
     SubscriptionPeriodMismatch = 70,
     #[msg("this billing period has already been paid")]
     SubscriptionAlreadyPaid = 71,
+    #[msg("sponsorship fee exceeds the maximum a root may set")]
+    SponsorFeeTooHigh = 72,
+    #[msg("fee vault holds a mint other than $GrokChain")]
+    SponsorFeeMintMismatch = 73,
+    #[msg("fee vault is not owned by the expected program authority")]
+    SponsorFeeVaultOwnerMismatch = 74,
+    #[msg("fee vault account data is malformed")]
+    SponsorFeeVaultMalformed = 75,
+    #[msg("there is nothing collected to burn")]
+    NothingToBurn = 76,
+    #[msg("burn did not empty the fee vault")]
+    BurnIncomplete = 77,
     #[msg("sub-grant cap exceeds the parent's remaining headroom")]
-    SubGrantExceedsParent = 72,
+    SubGrantExceedsParent = 78,
     #[msg("sub-grant would outlive the authority that issued it")]
-    SubGrantOutlivesParent = 73,
+    SubGrantOutlivesParent = 79,
     #[msg("delegation chain is deeper than MAX_SUB_DEPTH")]
-    SubGrantTooDeep = 74,
+    SubGrantTooDeep = 80,
     #[msg("signer does not hold the sub-grant being delegated from")]
-    SubGrantNotIssuer = 75,
+    SubGrantNotIssuer = 81,
     #[msg("an agent cannot issue a sub-grant to itself")]
-    SubGrantSelfIssue = 76,
+    SubGrantSelfIssue = 82,
     #[msg("the authority above this sub-grant is revoked")]
-    SubGrantParentRevoked = 77,
+    SubGrantParentRevoked = 83,
     #[msg("the authority above this sub-grant has expired")]
-    SubGrantParentExpired = 78,
+    SubGrantParentExpired = 84,
     #[msg("sub-grant expiry is in the past")]
-    SubGrantExpiryInPast = 79,
+    SubGrantExpiryInPast = 85,
     #[msg("a revision may only narrow a sub-grant, never widen it")]
-    SubGrantCannotWiden = 80,
+    SubGrantCannotWiden = 86,
     #[msg("sub-grant cap is below what has already been spent")]
-    SubGrantCapBelowSpent = 81,
+    SubGrantCapBelowSpent = 87,
     #[msg("sub-grant is already revoked")]
-    SubGrantAlreadyRevoked = 82,
+    SubGrantAlreadyRevoked = 88,
     #[msg("sub-grant is revoked")]
-    SubGrantRevoked = 83,
+    SubGrantRevoked = 89,
     #[msg("sub-grant has expired")]
-    SubGrantExpired = 84,
+    SubGrantExpired = 90,
     #[msg("sub-grant cap exceeded")]
-    SubGrantCapExceeded = 85,
+    SubGrantCapExceeded = 91,
     #[msg("signer does not hold this sub-grant")]
-    SubGrantNotHolder = 86,
+    SubGrantNotHolder = 92,
     #[msg("delegation chain is empty")]
-    SubGrantChainEmpty = 87,
+    SubGrantChainEmpty = 93,
     #[msg("delegation chain does not link parent to child")]
-    SubGrantChainBroken = 88,
+    SubGrantChainBroken = 94,
     #[msg("delegation chain does not reach the CORE grant")]
-    SubGrantChainTruncated = 89,
+    SubGrantChainTruncated = 95,
 }

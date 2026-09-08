@@ -886,7 +886,7 @@ See `programs/grok_chain_intents/src/instructions/*.rs`. Vault inits use `init` 
 - [x] No test, log, or event prints a seed phrase, private key, or backup file.
 - [x] Spec-lock unit tests: spaces, seeds, error 0..=14, discriminator hashes, CORE CPI metas/disc.
 - [ ] Validator / TS tests (no local validator on this box).
-- [x] `cargo-build-sbf --tools-version v1.52` produced `target/deploy/grok_chain_intents.so`. Deployed to **devnet** (see DEVNET.md). Not mainnet.
+- [x] `cargo-build-sbf` produced `target/deploy/grok_chain_intents.so`. Now deployed to **MAINNET** as `3HCErAFs93FMk2J25Qq1xRRMp6B4FyGvif8ZV8hYxQKw`. The earlier devnet rehearsal is recorded in `docs/history/DEVNET.md`.
 
 That is v1. Stop there.
 
