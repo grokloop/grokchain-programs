@@ -53,6 +53,20 @@ This folder is owned by **PROGRAMS**. It is the intent router (`pay`, `pay_token
 | `target/deploy/grok_chain_intents-keypair.json` | Program keypair (gitignored; do not commit) |
 | `target/deploy/grok_chain_intents.so` | SBF artifact from `cargo-build-sbf` |
 
+## Sponsorship fees and the burn — NOT DEPLOYED
+
+A fee denominated in $GrokChain, charged for gasless execution, accumulating in a
+vault whose **only exit is a burn**. There is no withdraw instruction — not
+root-gated, not timelocked, not multisig. The single instruction that can move
+that balance destroys it.
+
+The burn is permissionless, takes no amount, always burns the full balance, and
+verifies the vault is empty afterwards before it will emit an event.
+
+Written, compiled and tested. **Not on the live binary**, and the rate starts at
+zero even after a deploy. Full write-up, including what deploying would cost and
+what is deliberately still missing: [docs/SPONSOR_FEE.md](docs/SPONSOR_FEE.md).
+
 ## Program ids
 
 Crate `declare_id!` in this push is the **live MAINNET INTENTS** program:

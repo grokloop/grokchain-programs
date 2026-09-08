@@ -86,6 +86,23 @@ pub mod grok_chain_intents {
         instructions::pump::create_handler(ctx, args)
     }
 
+    /// NOT ON THE DEPLOYED BINARY. Creates the fee config, at zero.
+    pub fn init_sponsor_fee(ctx: Context<InitSponsorFee>) -> Result<()> {
+        instructions::sponsor_fee::init_fee(ctx)
+    }
+
+    /// NOT ON THE DEPLOYED BINARY. Sets the $GrokChain fee charged per
+    /// sponsored intent. Zero is the default and disables it entirely.
+    pub fn set_sponsor_fee(ctx: Context<SetSponsorFee>, fee_per_intent: u64) -> Result<()> {
+        instructions::sponsor_fee::set_fee(ctx, fee_per_intent)
+    }
+
+    /// NOT ON THE DEPLOYED BINARY. Burns every $GrokChain the fee vault holds.
+    /// Permissionless, takes no amount, and has no counterpart that withdraws.
+    pub fn burn_collected_fees(ctx: Context<BurnCollectedFees>) -> Result<()> {
+        instructions::sponsor_fee::burn_collected_fees(ctx)
+    }
+
     pub fn init_pump_trader(ctx: Context<InitPumpTrader>) -> Result<()> {
         instructions::pump_trader::init(ctx)
     }
