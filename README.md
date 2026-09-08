@@ -53,6 +53,25 @@ This folder is owned by **PROGRAMS**. It is the intent router (`pay`, `pay_token
 | `target/deploy/grok_chain_intents-keypair.json` | Program keypair (gitignored; do not commit) |
 | `target/deploy/grok_chain_intents.so` | SBF artifact from `cargo-build-sbf` |
 
+## Sub-grants — NOT DEPLOYED
+
+An agent delegating part of its own budget to another agent, so a planner can
+hire a researcher which hires a buyer, with no human in the loop after the first
+grant and no wallet anywhere in the tree.
+
+Authority only ever narrows going down: a child cannot exceed its parent's
+REMAINING headroom or outlive it, and a sub-grant is written once and can never
+be widened. Spending a leaf meters every ancestor, so the human's cap binds the
+whole subtree.
+
+Revoking a parent kills its descendants **without touching them** — every spend
+re-walks the chain to the root, so the cascade is a property of validation rather
+than an operation that could half-finish. Killing a tree is one instruction on
+one account, however many agents hang beneath it.
+
+Written, compiled, 68 tests. **Not on the live binary.** Full write-up:
+[docs/SUB_GRANTS.md](docs/SUB_GRANTS.md).
+
 ## Program ids
 
 Crate `declare_id!` in this push is the **live MAINNET INTENTS** program:

@@ -226,3 +226,31 @@ pub struct PaySubscriptionArgs {
     pub period: i64,
     pub sponsor_lamports: u64,
 }
+
+/// Delegated authority, issued by an agent out of its own budget.
+///
+/// `parent` is the sub-grant above this one, or the default pubkey when this
+/// hangs directly off the CORE grant. `depth` strictly increases downward,
+/// which is what makes cycles impossible and bounds the metering walk.
+///
+/// There is no `token` field on purpose: the asset is whatever the CORE grant
+/// and the merchant registry already pin, so a sub-grant cannot widen to a
+/// second denomination and make its cap meaningless.
+#[account]
+pub struct SubGrant {
+    pub grok_account: Pubkey,
+    pub parent: Pubkey,
+    pub issuer: Pubkey,
+    pub agent: Pubkey,
+    pub cap: u64,
+    pub spent: u64,
+    pub expires_at: i64,
+    pub revoked: bool,
+    pub depth: u8,
+    pub generation: u32,
+    pub bump: u8,
+}
+
+impl SubGrant {
+    pub const SPACE: usize = 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8 + 1 + 1 + 4 + 1;
+}

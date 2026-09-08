@@ -86,6 +86,33 @@ pub mod grok_chain_intents {
         instructions::pump::create_handler(ctx, args)
     }
 
+    /// NOT ON THE DEPLOYED BINARY. An agent delegates part of its own budget
+    /// to another agent. The child can never exceed the parent's remaining
+    /// headroom or outlive it, and the CORE grant remains the outer ceiling.
+    pub fn issue_sub_grant(
+        ctx: Context<IssueSubGrant>,
+        agent: Pubkey,
+        cap: u64,
+        expires_at_unix: i64,
+    ) -> Result<()> {
+        instructions::sub_grant::issue(ctx, agent, cap, expires_at_unix)
+    }
+
+    /// NOT ON THE DEPLOYED BINARY. Narrow a sub-grant. Widening is refused.
+    pub fn revise_sub_grant(
+        ctx: Context<ManageSubGrant>,
+        cap: u64,
+        expires_at_unix: i64,
+    ) -> Result<()> {
+        instructions::sub_grant::revise(ctx, cap, expires_at_unix)
+    }
+
+    /// NOT ON THE DEPLOYED BINARY. Kill one node and, with it, every agent
+    /// beneath it — without writing to a single descendant.
+    pub fn revoke_sub_grant(ctx: Context<ManageSubGrant>) -> Result<()> {
+        instructions::sub_grant::revoke(ctx)
+    }
+
     pub fn init_pump_trader(ctx: Context<InitPumpTrader>) -> Result<()> {
         instructions::pump_trader::init(ctx)
     }
