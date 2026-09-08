@@ -361,3 +361,44 @@ pub struct SponsorFeesBurned {
     pub amount: u64,
     pub burner: Pubkey,
 }
+
+#[event]
+pub struct SubGrantIssued {
+    pub grok_account: Pubkey,
+    pub parent: Pubkey,
+    pub issuer: Pubkey,
+    pub agent: Pubkey,
+    pub cap: u64,
+    pub expires_at: i64,
+    pub depth: u8,
+    pub generation: u32,
+}
+
+#[event]
+pub struct SubGrantRevised {
+    pub grok_account: Pubkey,
+    pub agent: Pubkey,
+    pub cap: u64,
+    pub expires_at: i64,
+    pub spent: u64,
+}
+
+/// Emitted once for the revoked node. Descendants are not written to and emit
+/// nothing — they stop working because every spend re-walks the chain.
+#[event]
+pub struct SubGrantRevoked {
+    pub grok_account: Pubkey,
+    pub agent: Pubkey,
+    pub spent: u64,
+    pub depth: u8,
+    pub generation: u32,
+}
+
+#[event]
+pub struct SubGrantSpent {
+    pub grok_account: Pubkey,
+    pub agent: Pubkey,
+    pub amount: u64,
+    pub depth: u8,
+    pub spent_after: u64,
+}

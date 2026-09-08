@@ -497,3 +497,107 @@ fn token_adapter_does_not_debit_vault_in_ix() {
     assert!(STATE_RS.contains("pub struct TokenSellArgs"));
     assert!(STATE_RS.contains("pub jupiter_data: Vec<u8>"));
 }
+
+// ------------------------------------------------------------- sub-grants
+// These assert the properties the design turns on. They are source-level
+// assertions because the delegation rules live in constraints and control flow
+// rather than in pure functions a unit test can call directly — and a rule that
+// silently disappears in a refactor is exactly what this file exists to catch.
+
+const SUB_GRANT_RS: &str = include_str!("instructions/sub_grant.rs");
+
+#[test]
+fn sub_grant_authority_only_ever_narrows() {
+    // A child may not out-spend or outlive what issued it. Lose either check and
+    // delegation stops being attenuation and becomes escalation.
+    assert!(SUB_GRANT_RS.contains("SubGrantExceedsParent"));
+    assert!(SUB_GRANT_RS.contains("SubGrantOutlivesParent"));
+    assert!(SUB_GRANT_RS.contains("cap <= headroom"));
+    assert!(SUB_GRANT_RS.contains("expires_at_unix <= parent_expiry"));
+    // Headroom is REMAINING, not cap: a parent that has already spent most of
+    // its budget cannot hand out what it no longer has.
+    assert!(SUB_GRANT_RS.contains("cap.saturating_sub(parent.spent)"));
+    assert!(SUB_GRANT_RS.contains("spend_cap_lamports"));
+}
+
+#[test]
+fn sub_grants_are_write_once_and_never_widen() {
+    // `init`, never `init_if_needed` — so no instruction anywhere in this
+    // program can increase delegated authority after the fact.
+    assert!(SUB_GRANT_RS.contains("        init,"));
+    // Match the ATTRIBUTE, not the identifier: the module comment explains why
+    // init_if_needed is avoided, and a test that cannot tell code from prose
+    // fails on its own documentation.
+    assert!(!SUB_GRANT_RS.contains("        init_if_needed,"));
+    assert!(SUB_GRANT_RS.contains("SubGrantCannotWiden"));
+    assert!(SUB_GRANT_RS.contains("cap <= sg.cap"));
+    assert!(SUB_GRANT_RS.contains("expires_at_unix <= sg.expires_at"));
+}
+
+#[test]
+fn revocation_cascades_without_touching_descendants() {
+    // The cascade is a property of validation, not an operation. `revoke` writes
+    // one account; descendants die because every spend re-walks to the root.
+    assert!(SUB_GRANT_RS.contains("sg.revoked = true"));
+    assert!(SUB_GRANT_RS.contains("require!(!sg.revoked, IntentsError::SubGrantRevoked)"));
+    assert!(SUB_GRANT_RS.contains("require!(sg.expires_at > now, IntentsError::SubGrantExpired)"));
+    // No descendant enumeration anywhere: a bulk update could half-finish or run
+    // out of compute, and a partially revoked tree is worse than none.
+    assert!(!SUB_GRANT_RS.contains("for child"));
+    assert!(!SUB_GRANT_RS.contains("children"));
+}
+
+#[test]
+fn metering_walks_every_ancestor() {
+    // Spending a leaf must move `spent` on the whole chain, or the human's cap
+    // stops binding the subtree and the delegation becomes free money.
+    assert!(SUB_GRANT_RS.contains("for node in chain.iter_mut()"));
+    assert!(SUB_GRANT_RS.contains("checked_add(amount)"));
+    // Validate everything before writing anything, so a chain that fails halfway
+    // leaves nothing metered.
+    assert!(SUB_GRANT_RS.contains("Pass one: validate the whole chain"));
+}
+
+#[test]
+fn the_chain_cannot_be_forged_or_truncated() {
+    // Each step must really be the previous node's parent, so a caller cannot
+    // splice in a richer unrelated sub-grant partway up.
+    assert!(SUB_GRANT_RS.contains("SubGrantChainBroken"));
+    assert!(SUB_GRANT_RS.contains("chain[i - 1].data.parent"));
+    // And the top must hang off the CORE grant, so a caller cannot stop early
+    // and skip the ancestors that would have refused.
+    assert!(SUB_GRANT_RS.contains("SubGrantChainTruncated"));
+    assert!(SUB_GRANT_RS.contains("Pubkey::default()"));
+}
+
+#[test]
+fn depth_is_bounded_and_cycles_are_impossible() {
+    // Every spend walks the chain, so an unbounded depth is an unbounded loop
+    // inside a payment.
+    assert_eq!(crate::instructions::sub_grant::MAX_SUB_DEPTH, 3);
+    assert!(SUB_GRANT_RS.contains("parent.depth < MAX_SUB_DEPTH"));
+    assert!(SUB_GRANT_RS.contains("chain.len() <= MAX_SUB_DEPTH as usize"));
+    // Depth strictly increases and the parent must already exist, so a chain
+    // cannot close on itself.
+    assert!(SUB_GRANT_RS.contains("parent.depth + 1"));
+    assert!(SUB_GRANT_RS.contains("SubGrantSelfIssue"));
+}
+
+#[test]
+fn a_sub_grant_cannot_widen_to_a_second_asset() {
+    // CORE meters one u64 with no notion of asset. A sub-grant that could name
+    // its own token would make every cap above it meaningless.
+    assert!(!SUB_GRANT_RS.contains("pub token: Pubkey"));
+    assert!(STATE_RS.contains("pub struct SubGrant"));
+    let start = STATE_RS.find("pub struct SubGrant").unwrap();
+    let end = STATE_RS[start..].find('}').unwrap() + start;
+    assert!(!STATE_RS[start..end].contains("token"));
+}
+
+#[test]
+fn sub_grants_are_not_on_the_deployed_binary() {
+    // Said in the module, and asserted here, because a repository that reads as
+    // though this were live would be the misleading part.
+    assert!(SUB_GRANT_RS.contains("NOT DEPLOYED"));
+    assert!(LIB_RS.contains("NOT ON THE DEPLOYED BINARY"));
+}

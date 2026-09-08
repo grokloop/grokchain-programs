@@ -26,6 +26,9 @@ pub const SEED_SPONSOR_FEE: &[u8] = b"sponsor-fee";
 /// Authority over the token account collected fees accumulate in. The only
 /// instruction that can move that balance is the burn.
 pub const SEED_FEE_VAULT: &[u8] = b"fee-vault";
+/// One sub-grant per agent per GrokAccount, same shape as CORE's grant seed.
+/// A single PDA per agent is what makes the parent links unambiguous.
+pub const SEED_SUB_GRANT: &[u8] = b"sub-grant";
 
 /// PumpTrader space. Always 0. Owner is the System Program, not INTENTS.
 pub const PUMP_TRADER_SPACE: usize = 0;

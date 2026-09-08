@@ -161,4 +161,40 @@ pub enum IntentsError {
     NothingToBurn = 76,
     #[msg("burn did not empty the fee vault")]
     BurnIncomplete = 77,
+    #[msg("sub-grant cap exceeds the parent's remaining headroom")]
+    SubGrantExceedsParent = 78,
+    #[msg("sub-grant would outlive the authority that issued it")]
+    SubGrantOutlivesParent = 79,
+    #[msg("delegation chain is deeper than MAX_SUB_DEPTH")]
+    SubGrantTooDeep = 80,
+    #[msg("signer does not hold the sub-grant being delegated from")]
+    SubGrantNotIssuer = 81,
+    #[msg("an agent cannot issue a sub-grant to itself")]
+    SubGrantSelfIssue = 82,
+    #[msg("the authority above this sub-grant is revoked")]
+    SubGrantParentRevoked = 83,
+    #[msg("the authority above this sub-grant has expired")]
+    SubGrantParentExpired = 84,
+    #[msg("sub-grant expiry is in the past")]
+    SubGrantExpiryInPast = 85,
+    #[msg("a revision may only narrow a sub-grant, never widen it")]
+    SubGrantCannotWiden = 86,
+    #[msg("sub-grant cap is below what has already been spent")]
+    SubGrantCapBelowSpent = 87,
+    #[msg("sub-grant is already revoked")]
+    SubGrantAlreadyRevoked = 88,
+    #[msg("sub-grant is revoked")]
+    SubGrantRevoked = 89,
+    #[msg("sub-grant has expired")]
+    SubGrantExpired = 90,
+    #[msg("sub-grant cap exceeded")]
+    SubGrantCapExceeded = 91,
+    #[msg("signer does not hold this sub-grant")]
+    SubGrantNotHolder = 92,
+    #[msg("delegation chain is empty")]
+    SubGrantChainEmpty = 93,
+    #[msg("delegation chain does not link parent to child")]
+    SubGrantChainBroken = 94,
+    #[msg("delegation chain does not reach the CORE grant")]
+    SubGrantChainTruncated = 95,
 }
