@@ -48,7 +48,7 @@ This folder is owned by **PROGRAMS**. It is the intent router (`pay`, `pay_token
 | Path | What it is |
 | --- | --- |
 | `SPEC.md` | Implementable v1 spec (source of truth for pay / swap / deploy / call) |
-| `DEVNET.md` | Devnet rehearsal program id, deploy sig, explorer URLs |
+| `docs/history/` | Superseded point-in-time reviews and the devnet rehearsal, kept for the audit trail |
 | `programs/grok_chain_intents` | Anchor/Rust crate. `declare_id` in this tree is the live MAINNET id |
 | `target/deploy/grok_chain_intents-keypair.json` | Program keypair (gitignored; do not commit) |
 | `target/deploy/grok_chain_intents.so` | SBF artifact from `cargo-build-sbf` |
@@ -61,7 +61,7 @@ Crate `declare_id!` in this push is the **live MAINNET INTENTS** program:
 
 CORE CPI target (MAINNET): `44fxwzuEyNxZtgDr87mTtMYYJ1LJm6cB5aZNLyBsPjNd`
 
-DEVNET INTENTS `EYhYtqLViS4H3FNt1Q8nGRHGt9oD87uaNsV2WJMNiRkz` still existed as rehearsal (see `DEVNET.md`). DEVNET CORE was `7UtafKBBWNHEXC9PaNXu8USdZqL6VEWupsL7rS6LeVDj`. Those ids are not what this crate declares now.
+DEVNET INTENTS `EYhYtqLViS4H3FNt1Q8nGRHGt9oD87uaNsV2WJMNiRkz` still existed as rehearsal (see `docs/history/DEVNET.md`). DEVNET CORE was `7UtafKBBWNHEXC9PaNXu8USdZqL6VEWupsL7rS6LeVDj`. Those ids are not what this crate declares now.
 
 Retired local placeholder (keypair was missing): `AXprcURLhSqj35v9DJyBkTSPGSoZ9AfTRxYyguQJwnT2`. Do not use it.
 
