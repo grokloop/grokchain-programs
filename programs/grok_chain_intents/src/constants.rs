@@ -20,6 +20,13 @@ pub const MAX_MERCHANTS: usize = 32;
 /// One subscription per (grok_account, merchant, mint).
 pub const SEED_SUBSCRIPTION: &[u8] = b"subscription";
 
+/// Per-GrokAccount sponsorship fee rate. Absent config means zero.
+pub const SEED_SPONSOR_FEE: &[u8] = b"sponsor-fee";
+
+/// Authority over the token account collected fees accumulate in. The only
+/// instruction that can move that balance is the burn.
+pub const SEED_FEE_VAULT: &[u8] = b"fee-vault";
+
 /// PumpTrader space. Always 0. Owner is the System Program, not INTENTS.
 pub const PUMP_TRADER_SPACE: usize = 0;
 

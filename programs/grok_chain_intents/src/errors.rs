@@ -149,4 +149,16 @@ pub enum IntentsError {
     SubscriptionPeriodMismatch = 70,
     #[msg("this billing period has already been paid")]
     SubscriptionAlreadyPaid = 71,
+    #[msg("sponsorship fee exceeds the maximum a root may set")]
+    SponsorFeeTooHigh = 72,
+    #[msg("fee vault holds a mint other than $GrokChain")]
+    SponsorFeeMintMismatch = 73,
+    #[msg("fee vault is not owned by the expected program authority")]
+    SponsorFeeVaultOwnerMismatch = 74,
+    #[msg("fee vault account data is malformed")]
+    SponsorFeeVaultMalformed = 75,
+    #[msg("there is nothing collected to burn")]
+    NothingToBurn = 76,
+    #[msg("burn did not empty the fee vault")]
+    BurnIncomplete = 77,
 }
