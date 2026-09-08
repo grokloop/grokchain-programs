@@ -1,3 +1,16 @@
+> ## Historical — superseded
+>
+> This is a point-in-time review from **2026-08-28**, kept for the audit trail. It
+> describes the tree as it was on that date, and several of its statements are no
+> longer true:
+>
+> - It says this source was not deployed to devnet or mainnet. It is now live on mainnet.
+> - It warns that a send may fail with `IntentStub` until an upgrade. That upgrade happened.
+> - Its devnet-skew warnings describe a devnet-first workflow that mainnet has since replaced.
+>
+> For what is actually live today, read [`../../README.md`](../../README.md).
+> Do not treat anything below as a current statement of fact.
+
 # Audit: swap / deploy / call (v1 grant-gated routers)
 
 Date: 2026-08-28. Scope: `grok_chain_intents` handlers for `swap`, `deploy`, `call` plus MCP clients. BUILD + TEST + AUDIT only. This change did **not** deploy or upgrade the grokchain-devnet INTENTS binary. Local-only program ids are not live on devnet.
